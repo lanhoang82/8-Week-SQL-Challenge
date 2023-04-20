@@ -41,7 +41,22 @@ ON s.product_id = me.product_id
 GROUP BY s.product_id, me.product_name
 ORDER BY volume_sold DESC;
 
-/*5. Which item was the most popular for each customer?*/
+/*5. Which item was the most popular for each customer?
+(approach: find the number of products bought by each customer
+then get the product with highest number of each customer
+*/
+WITH product_count AS (
+	SELECT customer_id,  me.product_name, COUNT(s.product_id) "prod_count"
+	FROM sales AS s
+	INNER JOIN menu AS me
+	ON s.product_id = me.product_id
+	GROUP BY me.product_name, customer_id
+	ORDER BY customer_id, prod_count DESC
+)
+SELECT customer_id, product_name, MAX(prod_count)
+FROM product_count
+GROUP BY customer_id, product_name
+
 /*6. Which item was purchased first by the customer after they became a member?*/
 /*7. Which item was purchased just before the customer became a member?*/
 /*8. What is the total items and amount spent for each member before they became a member?*/
