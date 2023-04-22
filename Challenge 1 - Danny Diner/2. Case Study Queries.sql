@@ -103,6 +103,72 @@ WITH order_bf_member_cte AS (
 SELECT customer_id, COUNT(product_name) AS total_item, SUM(price) AS amount_spent
 FROM order_bf_member_cte AS ob
 GROUP BY customer_id;
-/*9. If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points would each customer have?*/
+
+
+/*9. If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points 
+would each customer have? (assuming this includes also non-members)
+Approach:
+Point per product = product name * price * (if sushi then * 2)
+Point per customer = point per product * number of product per category AND THEN sum together
+Need a table of customer, product and count*/
+
+WITH pt_per_prod_cte AS (
+	SELECT product_name, price,
+		CASE
+			WHEN product_name = 'sushi' THEN price * 20
+			ELSE price * 10
+		END AS points
+	FROM menu AS me
+),
+prod_per_cust_cte AS (
+	SELECT s.customer_id, me.product_name, COUNT(me.product_name) 
+	FROM sales AS s
+	LEFT JOIN menu AS me
+		ON me.product_id = s.product_id
+	GROUP BY s.customer_id, me.product_name
+	ORDER BY s.customer_id
+)
+
+SELECT prod.customer_id, SUM(prod.count * pt.points) "total_points"
+FROM prod_per_cust_cte AS prod
+LEFT JOIN pt_per_prod_cte AS pt
+	ON prod.product_name = pt.product_name
+GROUP BY prod.customer_id 
+ORDER BY total_points DESC;
+
 /*10. In the first week after a customer joins the program (including their join date)
-they earn 2x points on all items, not just sushi - how many points do customer A and B have at the end of January?*/
+they earn 2x points on all items, not just sushi - how many points do customer A and B have at 
+the end of January?
+
+Approach: identify the date range (join date + 7 - that's when all points are doubled)
+After that 1 week, back to the original scheme: 2x points for sushi and 1x points for the rest
+pt_per_prod_cte table will contain both special scheme and original point scheme.
+Then use Case when on the date to determine which point scheme to use for point calculation*/
+
+WITH pt_per_prod_cte AS (
+	SELECT product_id, product_name, price, (price*20) AS points_new,
+		CASE
+			WHEN product_name = 'sushi' THEN price * 20
+			ELSE price * 10
+		END AS points_old
+	FROM menu AS me
+),
+cust_pt_det AS ( /*go through each order date to determine #points obtained based on join_date*/
+	SELECT s.customer_id, pt.product_name, order_date, join_date, pt.price,
+	CASE 
+		WHEN s.order_date >= join_date AND s.order_date < (join_date + 7)
+			THEN points_new
+		WHEN s.order_date >= (join_date + 7)
+			THEN points_old
+		ELSE 0
+	END AS points_per_prod
+FROM sales AS s
+LEFT JOIN pt_per_prod_cte AS pt
+ON s.product_id = pt.product_id
+INNER JOIN members AS mb
+ON s.customer_id = mb.customer_id
+)
+SELECT customer_id, SUM(points_per_prod) "total_points"
+FROM cust_pt_det AS cpt 
+WHERE order_date <= DATE '2021-01-31' /*specifying the end of Jan*/
+GROUP BY customer_id;
