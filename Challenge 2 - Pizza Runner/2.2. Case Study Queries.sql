@@ -12,11 +12,39 @@ Each of the following case study questions can be answered using a single SQL st
 There are many questions in this case study - please feel free to pick and choose which ones you’d like to try!
 
 Before you start writing your SQL queries however - you might want to investigate the data, you may want 
-to do something with some of those null values and data types in the customer_orders and runner_orders tables!
+to do something with some of those null values and data types in the customer_orders and runner_orders 
+tables!*/
 
-A. Pizza Metrics
-1. How many pizzas were ordered?
-2. How many unique customer orders were made?
+/* Data Cleaning 
+	pickup_time should be date time
+	distance should be integer (km)
+	duration should be integer (minutes)
+	cancellation text*/
+
+UPDATE runner_orders /* Replace null values with another value for the column of var type */
+SET cancellation = '-'
+	WHERE cancellation IS NULL or cancellation = 'null' OR cancellation = '';
+
+ALTER TABLE runner_orders /* Updating the column type */
+	ALTER COLUMN cancellation TYPE VARCHAR(30);
+
+UPDATE runner_orders	/* Replace null values with 0 */
+SET duration = '0'
+	WHERE duration = 'null';
+
+UPDATE runner_orders	 /* Replace null values with 0 */
+SET distance = '0'
+	WHERE distance = 'null';
+	
+SELECT * FROM runner_orders;
+
+/*A. Pizza Metrics
+
+1. How many pizzas were ordered?*/
+
+
+
+/*2. How many unique customer orders were made?
 3. How many successful orders were delivered by each runner?
 4. How many of each type of pizza was delivered?
 5. How many Vegetarian and Meatlovers were ordered by each customer?
