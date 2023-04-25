@@ -15,38 +15,79 @@ Before you start writing your SQL queries however - you might want to investigat
 to do something with some of those null values and data types in the customer_orders and runner_orders 
 tables!*/
 
-/* Data Cleaning 
-	pickup_time should be date time
-	distance should be integer (km)
-	duration should be integer (minutes)
-	cancellation text*/
+/* Data Cleaning: runner_orders*/
 
-UPDATE runner_orders /* Replace null values with another value for the column of var type */
-SET cancellation = '-'
-	WHERE cancellation IS NULL or cancellation = 'null' OR cancellation = '';
-
-ALTER TABLE runner_orders /* Updating the column type */
-	ALTER COLUMN cancellation TYPE VARCHAR(30);
+UPDATE runner_orders /* Replace 'null' string with actual null value */
+SET cancellation = NULLIF(cancellation,'null');
 
 UPDATE runner_orders	/* Replace null values with 0 */
-SET duration = '0'
-	WHERE duration = 'null';
+SET duration = '0' WHERE duration = 'null';
 
 UPDATE runner_orders	 /* Replace null values with 0 */
 SET distance = '0'
 	WHERE distance = 'null';
-	
+
+UPDATE runner_orders /*\D being the class shorthand for "not a digit", 4th parameter 'g' 
+						(for "globally") to replace all occurrences.*/
+SET distance = regexp_replace(duration, '\D', '', 'g')::numeric;
+
+ALTER TABLE runner_orders
+RENAME COLUMN distance TO distance_km;
+
+UPDATE runner_orders /*keeping only the digits in the duration column*/
+SET duration = regexp_replace(duration, '\D', '', 'g')::numeric;
+
+ALTER TABLE runner_orders
+RENAME COLUMN duration TO duration_min;
+
+UPDATE runner_orders /*replace the string 'null' with actual NULL value*/
+SET pickup_time = NULLIF(pickup_time,'null');
+
+SELECT NULLIF(pickup_time,'null') 
+FROM runner_orders;
+
+ALTER TABLE runner_orders /*convert data type to timestamp*/
+ALTER pickup_time TYPE TIMESTAMP USING pickup_time::timestamp without time zone;
+
+ALTER TABLE runner_orders /*convert data type to integer*/
+ALTER distance_km TYPE INTEGER USING distance_km::integer;
+
+ALTER TABLE runner_orders /*convert data type to timestamp*/
+ALTER duration_min TYPE INTEGER USING duration_min::integer;
+
 SELECT * FROM runner_orders;
+
+/* Data Cleaning: customer_orders*/
+
+UPDATE customer_orders /*replace the string 'null with actual NULL value'*/
+SET exclusions = NULLIF(exclusions,'');
+
+UPDATE customer_orders /*replace the string 'null with actual NULL value'*/
+SET extras = NULLIF(extras,'');
+
+SELECT * FROM customer_orders;
 
 /*A. Pizza Metrics
 
 1. How many pizzas were ordered?*/
 
+SELECT COUNT(pizza_id) "num_pizzas_ordered"
+FROM customer_orders;
 
+/*2. How many unique customer orders were made?*/
 
-/*2. How many unique customer orders were made?
-3. How many successful orders were delivered by each runner?
-4. How many of each type of pizza was delivered?
+SELECT COUNT(DISTINCT customer_id) "unique_cust_order#" 
+FROM customer_orders;
+
+/*3. How many successful orders were delivered by each runner?*/
+
+SELECT runner_id, COUNT(order_id) AS num_succ_order
+FROM runner_orders AS ro
+WHERE ro.distance_km > 0
+GROUP BY runner_id
+ORDER BY num_succ_order DESC;
+
+/*4. How many of each type of pizza was delivered?
 5. How many Vegetarian and Meatlovers were ordered by each customer?
 6. What was the maximum number of pizzas delivered in a single order?
 7. For each customer, how many delivered pizzas had at least 1 change and how many had no changes?
