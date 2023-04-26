@@ -72,7 +72,10 @@ SELECT * FROM customer_orders;
 1. How many pizzas were ordered?*/
 
 SELECT COUNT(pizza_id) "num_pizzas_ordered"
-FROM customer_orders;
+FROM customer_orders AS co
+INNER JOIN runner_orders AS ro
+ON co.order_id = ro.order_id
+WHERE cancellation ISNULL;
 
 /*2. How many unique customer orders were made?*/
 
@@ -87,22 +90,54 @@ WHERE ro.distance_km > 0
 GROUP BY runner_id
 ORDER BY num_succ_order DESC;
 
-/*4. How many of each type of pizza was delivered?
-5. How many Vegetarian and Meatlovers were ordered by each customer?
-6. What was the maximum number of pizzas delivered in a single order?
-7. For each customer, how many delivered pizzas had at least 1 change and how many had no changes?
-8. How many pizzas were delivered that had both exclusions and extras?
-9. What was the total volume of pizzas ordered for each hour of the day?
-10. What was the volume of orders for each day of the week?
+/*4. How many of each type of pizza was delivered? */
 
-B. Runner and Customer Experience
-1. How many runners signed up for each 1 week period? (i.e. week starts 2021-01-01)
-2. What was the average time in minutes it took for each runner to arrive at the Pizza Runner HQ to pickup the order?
-3. Is there any relationship between the number of pizzas and how long the order takes to prepare?
-4. What was the average distance travelled for each customer?
-5. What was the difference between the longest and shortest delivery times for all orders?
-6. What was the average speed for each runner for each delivery and do you notice any trend for these values?
-7. What is the successful delivery percentage for each runner?
+SELECT pizza_id, COUNT(pizza_id)
+FROM customer_orders AS co
+INNER JOIN runner_orders AS ro
+ON co.order_id = ro.order_id
+WHERE cancellation ISNULL
+GROUP BY pizza_id;
+
+/*5. How many Vegetarian and Meatlovers were ordered by each customer? */
+
+SELECT customer_id, pizza_name, COUNT(co.pizza_id)
+FROM customer_orders AS co
+LEFT JOIN pizza_names AS pn
+ON co.pizza_id = pn.pizza_id
+GROUP BY customer_id, pizza_name
+ORDER BY customer_id;
+
+/*6. What was the maximum number of pizzas delivered in a single order? */
+SELECT * FROM customer_orders;
+
+WITH num_piz_per_order AS
+	(SELECT order_id, COUNT(pizza_id) "num_pizza"
+	 FROM customer_orders AS co
+	 GROUP BY order_id)
+SELECT order_id, num_pizza
+FROM num_piz_per_order
+WHERE num_pizza = (
+	SELECT MAX(num_pizza)
+	FROM num_piz_per_order
+);
+
+
+/*7. For each customer, how many delivered pizzas had at least 1 change and how many had no changes?*/
+/*8. How many pizzas were delivered that had both exclusions and extras?*/
+/*9. What was the total volume of pizzas ordered for each hour of the day?*/
+/*10. What was the volume of orders for each day of the week?*/
+
+/*B. Runner and Customer Experience
+/*1. How many runners signed up for each 1 week period? (i.e. week starts 2021-01-01)*/
+/*2. What was the average time in minutes it took for each runner to arrive at the Pizza Runner HQ to 
+pickup the order?*/
+/*3. Is there any relationship between the number of pizzas and how long the order takes to prepare?*/
+/*4. What was the average distance travelled for each customer?*/
+/*5. What was the difference between the longest and shortest delivery times for all orders?*/
+/*6. What was the average speed for each runner for each delivery and do you notice any trend for 
+these values?*/
+/*7. What is the successful delivery percentage for each runner?*/
 
 C. Ingredient Optimisation
 1. What are the standard ingredients for each pizza?
