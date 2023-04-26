@@ -124,6 +124,22 @@ WHERE num_pizza = (
 
 
 /*7. For each customer, how many delivered pizzas had at least 1 change and how many had no changes?*/
+SELECT * FROM customer_orders;
+WITH order_change_cte AS (
+	SELECT pizza_id, exclusions, extras,
+		CASE
+			WHEN exclusions ISNULL AND extras ISNULL THEN 'N'
+			ELSE 'Y'
+		END AS order_change
+	FROM customer_orders AS co
+	INNER JOIN runner_orders AS ro
+	ON co.order_id = ro.order_id
+	WHERE cancellation ISNULL
+)
+SELECT order_change, COUNT(pizza_id) "num_pizza"
+FROM order_change_cte
+GROUP BY order_change;
+
 /*8. How many pizzas were delivered that had both exclusions and extras?*/
 /*9. What was the total volume of pizzas ordered for each hour of the day?*/
 /*10. What was the volume of orders for each day of the week?*/
