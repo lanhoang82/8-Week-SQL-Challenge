@@ -65,6 +65,12 @@ SET exclusions = NULLIF(exclusions,'');
 UPDATE customer_orders /*replace the string 'null with actual NULL value'*/
 SET extras = NULLIF(extras,'');
 
+ALTER TABLE customer_orders
+ADD COLUMN order_date DATE;
+
+UPDATE customer_orders
+SET order_date = DATE(order_time);
+
 SELECT * FROM customer_orders;
 
 /*A. Pizza Metrics
@@ -109,7 +115,7 @@ GROUP BY customer_id, pizza_name
 ORDER BY customer_id;
 
 /*6. What was the maximum number of pizzas delivered in a single order? */
-SELECT * FROM customer_orders;
+
 
 WITH num_piz_per_order AS
 	(SELECT order_id, COUNT(pizza_id) "num_pizza"
@@ -124,7 +130,7 @@ WHERE num_pizza = (
 
 
 /*7. For each customer, how many delivered pizzas had at least 1 change and how many had no changes?*/
-SELECT * FROM customer_orders;
+
 WITH order_change_cte AS (
 	SELECT pizza_id, exclusions, extras,
 		CASE
@@ -141,8 +147,20 @@ FROM order_change_cte
 GROUP BY order_change;
 
 /*8. How many pizzas were delivered that had both exclusions and extras?*/
+
+SELECT COUNT(pizza_id)
+FROM customer_orders AS co
+INNER JOIN runner_orders AS ro
+ON co.order_id = ro.order_id 
+WHERE ro.cancellation ISNULL AND co.exclusions IS NOT NULL AND co.extras IS NOT NULL;
 /*9. What was the total volume of pizzas ordered for each hour of the day?*/
+
+SELECT * FROM customer_orders;
 /*10. What was the volume of orders for each day of the week?*/
+SELECT order_date, COUNT(order_id) "order_vol"
+FROM customer_orders
+GROUP BY order_date
+ORDER BY order_date;
 
 /*B. Runner and Customer Experience
 /*1. How many runners signed up for each 1 week period? (i.e. week starts 2021-01-01)*/
