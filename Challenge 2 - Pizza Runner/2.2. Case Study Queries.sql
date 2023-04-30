@@ -55,6 +55,12 @@ ALTER distance_km TYPE INTEGER USING distance_km::integer;
 ALTER TABLE runner_orders /*convert data type to timestamp*/
 ALTER duration_min TYPE INTEGER USING duration_min::integer;
 
+ALTER TABLE runner_orders
+ADD COLUMN pickup_date DATE;
+
+UPDATE runner_orders
+SET pickup_date = DATE(pickup_time);
+
 SELECT * FROM runner_orders;
 
 /* Data Cleaning: customer_orders*/
@@ -163,9 +169,43 @@ GROUP BY order_date
 ORDER BY order_date;
 
 /*B. Runner and Customer Experience
-/*1. How many runners signed up for each 1 week period? (i.e. week starts 2021-01-01)*/
+1. How many runners signed up for each 1 week period? (i.e. week starts 2021-01-01)*/
+
+/*Using data from runner_orders table*/
+WITH runner_in_week_cte AS (
+	SELECT runner_id, pickup_date, DATE_PART('week', pickup_date) "week_period"
+	FROM runner_orders
+	WHERE cancellation IS NULL
+)
+SELECT week_period, COUNT(runner_id) "num_runner"
+FROM runner_in_week_cte
+GROUP BY week_period;
+
+/*Using data from runners table*/
+
+WITH runner_in_week_cte AS (
+	SELECT runner_id, registration_date, DATE_PART('week', registration_date) "week_period"
+	FROM runners
+)
+SELECT week_period, COUNT(runner_id) "num_runner"
+FROM runner_in_week_cte
+GROUP BY week_period;
+
 /*2. What was the average time in minutes it took for each runner to arrive at the Pizza Runner HQ to 
 pickup the order?*/
+
+WITH runner_time_cte AS(
+	SELECT runner_id, order_time, pickup_time, (pickup_time - order_time) "runner_duration"
+	FROM customer_orders AS co
+	INNER JOIN runner_orders AS ro
+	ON co.order_id = ro.order_id
+	WHERE pickup_time IS NOT NULL
+)
+SELECT runner_id, AVG(runner_duration) "avg_time"
+FROM runner_time_cte
+GROUP BY runner_id
+ORDER BY avg_time ASC;
+
 /*3. Is there any relationship between the number of pizzas and how long the order takes to prepare?*/
 /*4. What was the average distance travelled for each customer?*/
 /*5. What was the difference between the longest and shortest delivery times for all orders?*/
@@ -173,7 +213,7 @@ pickup the order?*/
 these values?*/
 /*7. What is the successful delivery percentage for each runner?*/
 
-C. Ingredient Optimisation
+/*C. Ingredient Optimisation
 1. What are the standard ingredients for each pizza?
 2. What was the most commonly added extra?
 3. What was the most common exclusion?
