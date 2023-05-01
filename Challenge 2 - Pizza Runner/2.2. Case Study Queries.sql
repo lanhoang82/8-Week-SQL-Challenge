@@ -206,7 +206,23 @@ FROM runner_time_cte
 GROUP BY runner_id
 ORDER BY avg_time ASC;
 
-/*3. Is there any relationship between the number of pizzas and how long the order takes to prepare?*/
+/*3. Is there any relationship between the number of pizzas and how long the order takes to prepare?
+Answer: there seems to be some correlation between the number of pizzas ordered and the time it takes 
+to prepare, apart from 1 order of 1 pizza that takes twice the time as that of the similar orders.*/
+SELECT * FROM customer_orders;
+
+WITH runner_time_cte AS (
+	SELECT ro.order_id, pizza_id, order_time, pickup_time, (pickup_time - order_time) "runner_duration"
+	FROM customer_orders AS co
+	INNER JOIN runner_orders AS ro
+	ON co.order_id = ro.order_id
+	WHERE pickup_time IS NOT NULL
+)
+SELECT order_id, COUNT(pizza_id) "num_pizza", runner_duration
+FROM runner_time_cte
+GROUP BY order_id, runner_duration
+ORDER BY num_pizza DESC;
+
 /*4. What was the average distance travelled for each customer?*/
 /*5. What was the difference between the longest and shortest delivery times for all orders?*/
 /*6. What was the average speed for each runner for each delivery and do you notice any trend for 
