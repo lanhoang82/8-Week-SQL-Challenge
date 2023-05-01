@@ -1,6 +1,6 @@
 # 8-Week SQL Challenge
 
-Here goes my commitment to maintaining and improving my SQL skills with the help of Danny Ma's 8-week SQL challenge. There are 8 challenges that are designed to be tackled each week:
+This is my commitment to maintaining and improving my SQL skills with the help of Danny Ma's 8-week SQL challenge. There are 8 challenges that are designed to be tackled each week per below. All queries included have been successful run and validated.
 
 - Case Study #1 - Danny’s Diner
 - Case Study #2 - Pizza Runner
