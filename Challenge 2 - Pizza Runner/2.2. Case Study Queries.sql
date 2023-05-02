@@ -16,9 +16,13 @@ to do something with some of those null values and data types in the customer_or
 tables!*/
 
 /* Data Cleaning: runner_orders*/
+SELECT * FROM runner_orders;
 
 UPDATE runner_orders /* Replace 'null' string with actual null value */
 SET cancellation = NULLIF(cancellation,'null');
+
+UPDATE runner_orders /* Replace 'null' string with actual null value */
+SET cancellation = NULLIF(cancellation,'');
 
 UPDATE runner_orders	/* Replace null values with 0 */
 SET duration = '0' WHERE duration = 'null';
@@ -29,7 +33,7 @@ SET distance = '0'
 
 UPDATE runner_orders /*\D being the class shorthand for "not a digit", 4th parameter 'g' 
 						(for "globally") to replace all occurrences.*/
-SET distance = regexp_replace(duration, '\D', '', 'g')::numeric;
+SET distance = regexp_replace(distance, 'km', '', 'g')::numeric;
 
 ALTER TABLE runner_orders
 RENAME COLUMN distance TO distance_km;
@@ -50,7 +54,7 @@ ALTER TABLE runner_orders /*convert data type to timestamp*/
 ALTER pickup_time TYPE TIMESTAMP USING pickup_time::timestamp without time zone;
 
 ALTER TABLE runner_orders /*convert data type to integer*/
-ALTER distance_km TYPE INTEGER USING distance_km::integer;
+ALTER distance_km TYPE DECIMAL USING distance_km::decimal;
 
 ALTER TABLE runner_orders /*convert data type to timestamp*/
 ALTER duration_min TYPE INTEGER USING duration_min::integer;
@@ -224,10 +228,48 @@ GROUP BY order_id, runner_duration
 ORDER BY num_pizza DESC;
 
 /*4. What was the average distance travelled for each customer?*/
+SELECT customer_id, ROUND(AVG(distance_km),2) "avg_distance"
+FROM runner_orders AS ro
+INNER JOIN customer_orders AS co
+ON co.order_id = ro.order_id
+WHERE distance_km IS NOT NULL
+GROUP BY customer_id
+ORDER BY avg_distance DESC;
+
 /*5. What was the difference between the longest and shortest delivery times for all orders?*/
+SELECT * FROM runner_orders;
+
+SELECT MAX(duration_min) - MIN(duration_min) "delivery_time_diff"
+FROM runner_orders
+WHERE duration_min > 0; 
+
 /*6. What was the average speed for each runner for each delivery and do you notice any trend for 
 these values?*/
+
+SELECT runner_id, ROUND(AVG((distance_km / duration_min )),2) "avg_speed"
+FROM runner_orders
+WHERE cancellation ISNULL
+GROUP BY runner_id
+ORDER BY avg_speed DESC;
+
 /*7. What is the successful delivery percentage for each runner?*/
+WITH num_order_cte AS(
+	SELECT runner_id, COUNT(order_id) "num_orders"
+	FROM runner_orders
+	GROUP BY runner_id
+),
+num_succ_orders_cte AS(
+	SELECT runner_id, COUNT(order_id) "num_succ_orders"
+	FROM runner_orders
+	WHERE cancellation ISNULL
+	GROUP BY runner_id
+)
+SELECT t1.runner_id, ROUND((num_succ_orders::decimal / num_orders::decimal), 2)
+/*columns have integer types, and integer division truncates the result towards zero. 
+To get an accurate result, need to cast at least one of the values to float or decimal:*/
+FROM num_order_cte AS t1
+JOIN num_succ_orders_cte AS t2
+ON t1.runner_id = t2.runner_id
 
 /*C. Ingredient Optimisation
 1. What are the standard ingredients for each pizza?
