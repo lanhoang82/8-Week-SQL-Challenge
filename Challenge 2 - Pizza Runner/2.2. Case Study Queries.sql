@@ -274,11 +274,6 @@ ON t1.runner_id = t2.runner_id
 /*C. Ingredient Optimisation
 1. What are the standard ingredients for each pizza?*/
 
-SELECT * 
-FROM pizza_names AS pn
-INNER JOIN pizza_recipes AS pr
-ON pn.pizza_id = pr.pizza_id
-
 WITH pizza_recipe_pivot_cte AS(
 	SELECT pizza_id, UNNEST(string_to_array(toppings, ','))::integer "topping_id"
 	FROM pizza_recipes
@@ -291,10 +286,26 @@ LEFT JOIN pizza_names AS pn
 ON pn.pizza_id = pr.pizza_id
 ORDER BY pizza_id
 
+/*2. What was the most commonly added extra?*/
+WITH extras_cte AS (
+	SELECT pizza_id, UNNEST(string_to_array(extras, ','))::integer "extra_topping" 
+	FROM customer_orders AS co
+	WHERE extras IS NOT NULL
+	ORDER BY pizza_id
+),
+extra_count_cte AS (
+	SELECT topping_name, COUNT(topping_name) "occurence", 
+		RANK() OVER(ORDER BY COUNT(topping_name) DESC) AS "occur_rank"
+	FROM extras_cte AS ec
+	LEFT JOIN pizza_toppings AS pt
+	ON ec.extra_topping = pt.topping_id
+	GROUP BY topping_name
+)
+SELECT topping_name, occurence
+FROM extra_count_cte
+WHERE occur_rank = 1;
 
-
-/*2. What was the most commonly added extra?
-3. What was the most common exclusion?
+/*3. What was the most common exclusion?
 4. Generate an order item for each record in the customers_orders table in the format of one of the following:
 	a. Meat Lovers
 	b. Meat Lovers - Exclude Beef
