@@ -231,7 +231,18 @@ SELECT topping_name, occurence
 FROM extra_count_cte
 WHERE occur_rank = 1;
 
-/*3. What was the most common exclusion?
+/*3. What was the most common exclusion?*/
+WITH excl_topping_cte AS (
+	SELECT pizza_id, UNNEST(string_to_array(exclusions, ','))::integer "excl_topping" 
+	FROM customer_orders AS co
+)
+SELECT topping_name, COUNT(excl_topping) "excl_num"
+FROM excl_topping_cte AS et
+LEFT JOIN pizza_toppings AS pt
+ON et.excl_topping = pt.topping_id
+GROUP BY topping_name
+ORDER BY excl_num DESC;
+
 4. Generate an order item for each record in the customers_orders table in the format of one of the following:
 	a. Meat Lovers
 	b. Meat Lovers - Exclude Beef
