@@ -243,7 +243,8 @@ ON et.excl_topping = pt.topping_id
 GROUP BY topping_name
 ORDER BY excl_num DESC;
 
-4. Generate an order item for each record in the customers_orders table in the format of one of the following:
+/*4. Generate an order item for each record in the customers_orders table in the format of one of the 
+following:
 	a. Meat Lovers
 	b. Meat Lovers - Exclude Beef
 	c. Meat Lovers - Extra Bacon
