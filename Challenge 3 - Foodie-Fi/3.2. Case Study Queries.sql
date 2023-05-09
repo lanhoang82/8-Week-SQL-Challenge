@@ -33,9 +33,23 @@ GROUP BY start_month
 ORDER BY start_month ASC;
 
 /*3. What plan start_date values occur after the year 2020 for our dataset? Show the breakdown by count of 
-events for each plan_name
-4. What is the customer count and percentage of customers who have churned rounded to 1 decimal place?
-5. How many customers have churned straight after their initial free trial - what percentage is this rounded to the nearest whole number?
+events for each plan_name*/
+
+/*4. What is the customer count and percentage of customers who have churned rounded to 1 decimal place?
+The column value is an integer, integer division truncates the result towards zero. To get an accurate 
+result, you'll need to cast at least one of the values to float or decimal:*/
+
+SELECT COUNT(DISTINCT customer_id) "churn_cust", 
+	ROUND(COUNT(DISTINCT customer_id)::numeric
+		  /
+		  (SELECT COUNT(DISTINCT customer_id) FROM subscriptions AS s)*100::numeric, 2) "churn_pct"
+FROM subscriptions AS s
+LEFT JOIN plan AS pl
+ON s.plan_id = pl.plan_id
+WHERE pl.plan_name = 'churn';
+
+
+/*5. How many customers have churned straight after their initial free trial - what percentage is this rounded to the nearest whole number?
 6. What is the number and percentage of customer plans after their initial free trial?
 7. What is the customer count and percentage breakdown of all 5 plan_name values at 2020-12-31?
 8. How many customers have upgraded to an annual plan in 2020?
