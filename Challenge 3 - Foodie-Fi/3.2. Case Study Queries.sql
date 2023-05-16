@@ -49,8 +49,26 @@ ON s.plan_id = pl.plan_id
 WHERE pl.plan_name = 'churn';
 
 
-/*5. How many customers have churned straight after their initial free trial - what percentage is this rounded to the nearest whole number?
-6. What is the number and percentage of customer plans after their initial free trial?
+/*5. How many customers have churned straight after their initial free trial - what percentage is this 
+rounded to the nearest whole number?
+
+Customers who churned are the one with plan_id 0 then immediately 4*/
+
+WITH trial_churn_cust_cte AS (
+	SELECT s1.customer_id, s1.plan_id, s1.start_date, s2.plan_id, s2.start_date
+	FROM subscriptions AS s1
+	INNER JOIN subscriptions AS s2
+	ON s1.customer_id = s2.customer_id
+	WHERE s1.plan_id = 0 AND s2.plan_id = 4 AND (s2.start_date = s1.start_date + 7)
+)
+SELECT COUNT(DISTINCT customer_id) "cust_num", 
+	ROUND(
+		(COUNT(DISTINCT customer_id)::numeric 
+		/ 
+		(SELECT COUNT(DISTINCT customer_id) FROM subscriptions))*100::numeric,0) "pct"
+FROM trial_churn_cust_cte
+
+/*6. What is the number and percentage of customer plans after their initial free trial?
 7. What is the customer count and percentage breakdown of all 5 plan_name values at 2020-12-31?
 8. How many customers have upgraded to an annual plan in 2020?
 9. How many days on average does it take for a customer to an annual plan from the day they join Foodie-Fi?
