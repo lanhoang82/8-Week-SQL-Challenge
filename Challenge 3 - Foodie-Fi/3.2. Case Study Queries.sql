@@ -69,7 +69,33 @@ SELECT COUNT(DISTINCT customer_id) "cust_num",
 FROM trial_churn_cust_cte
 
 /*6. What is the number and percentage of customer plans after their initial free trial?
-7. What is the customer count and percentage breakdown of all 5 plan_name values at 2020-12-31?
+So we want to count number of those that when to each of the available plans (including churn)
+after trial*/
+WITH post_trial_plan_cte AS (
+SELECT * 
+	FROM ( /*Wrap the original query and use it as a subquery to filter out null values*/
+		SELECT s1.customer_id, s1.plan_id, s1.start_date,
+			CASE 
+				WHEN s1.plan_id = 0 AND s2.plan_id = 1 AND (s2.start_date = s1.start_date + 7) THEN 1
+				WHEN s1.plan_id = 0 AND s2.plan_id = 2 AND (s2.start_date = s1.start_date + 7) THEN 2
+				WHEN s1.plan_id = 0 AND s2.plan_id = 3 AND (s2.start_date = s1.start_date + 7) THEN 3
+				WHEN s1.plan_id = 0 AND s2.plan_id = 4 AND (s2.start_date = s1.start_date + 7) THEN 4
+			END AS "post_trial_plan"
+		FROM subscriptions AS s1
+			INNER JOIN subscriptions AS s2
+			ON s1.customer_id = s2.customer_id AND s1.plan_id <> s2.plan_id
+		) AS sub
+	WHERE post_trial_plan IS NOT NULL
+)
+SELECT post_trial_plan,
+	COUNT(customer_id) "num_cust",
+	ROUND(COUNT(customer_id)::numeric / (SELECT COUNT(DISTINCT customer_id) FROM subscriptions)*100::numeric,2)  "num_pct"
+FROM post_trial_plan_cte
+WHERE post_trial_plan IS NOT NULL
+GROUP BY post_trial_plan
+ORDER BY num_cust DESC;
+
+/*7. What is the customer count and percentage breakdown of all 5 plan_name values at 2020-12-31?
 8. How many customers have upgraded to an annual plan in 2020?
 9. How many days on average does it take for a customer to an annual plan from the day they join Foodie-Fi?
 10. Can you further breakdown this average value into 30 day periods (i.e. 0-30 days, 31-60 days etc)
