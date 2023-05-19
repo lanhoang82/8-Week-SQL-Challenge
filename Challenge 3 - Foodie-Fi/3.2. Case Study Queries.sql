@@ -96,7 +96,29 @@ GROUP BY post_trial_plan
 ORDER BY num_cust DESC;
 
 /*7. What is the customer count and percentage breakdown of all 5 plan_name values at 2020-12-31?
-8. How many customers have upgraded to an annual plan in 2020?
+
+So we count all customers up until 2020-12-31*/
+CREATE VIEW plan_snapshot AS
+WITH plan_snapshot_cte AS (
+	SELECT customer_id, MAX(start_date) "start_date"
+	FROM subscriptions
+	WHERE start_date <= '2020-12-31'
+	GROUP BY customer_id
+)
+SELECT pl_cte.customer_id, s.plan_id, pl_cte.start_date
+FROM plan_snapshot_cte AS pl_cte
+LEFT JOIN subscriptions AS s
+ON s.customer_id = pl_cte.customer_id AND pl_cte.start_date = s.start_date;
+
+SELECT plan_id, COUNT(DISTINCT customer_id) "cust_count",
+	ROUND(COUNT(DISTINCT customer_id)::numeric 
+	/ 
+	(SELECT COUNT(DISTINCT customer_id) FROM plan_snapshot)::numeric, 2)  "cust_pct"
+FROM plan_snapshot
+GROUP BY plan_id
+ORDER BY cust_pct;
+
+/*8. How many customers have upgraded to an annual plan in 2020?
 9. How many days on average does it take for a customer to an annual plan from the day they join Foodie-Fi?
 10. Can you further breakdown this average value into 30 day periods (i.e. 0-30 days, 31-60 days etc)
 11. How many customers downgraded from a pro monthly to a basic monthly plan in 2020?
