@@ -119,6 +119,29 @@ GROUP BY plan_id
 ORDER BY cust_pct;
 
 /*8. How many customers have upgraded to an annual plan in 2020?
-9. How many days on average does it take for a customer to an annual plan from the day they join Foodie-Fi?
+Meaning that they started out on trial and then switched to annual plan, not 4, start date before end of 2020*/
+
+WITH post_trial_plan_cte AS (
+SELECT * 
+	FROM ( /*Wrap the original query and use it as a subquery to filter out null values*/
+		SELECT s1.customer_id, s1.plan_id, s1.start_date "trial_start", s2.start_date "post_trial_start",
+			CASE 
+				WHEN s1.plan_id = 0 AND s2.plan_id = 1 AND (s2.start_date = s1.start_date + 7) THEN 1
+				WHEN s1.plan_id = 0 AND s2.plan_id = 2 AND (s2.start_date = s1.start_date + 7) THEN 2
+				WHEN s1.plan_id = 0 AND s2.plan_id = 3 AND (s2.start_date = s1.start_date + 7) THEN 3
+				WHEN s1.plan_id = 0 AND s2.plan_id = 4 AND (s2.start_date = s1.start_date + 7) THEN 4
+			END AS "post_trial_plan"
+		FROM subscriptions AS s1
+			INNER JOIN subscriptions AS s2
+			ON s1.customer_id = s2.customer_id AND s1.plan_id <> s2.plan_id
+		) AS sub
+	WHERE post_trial_plan IS NOT NULL
+)
+SELECT post_trial_plan, COUNT(DISTINCT customer_id) "num_cust"
+FROM post_trial_plan_cte
+WHERE post_trial_plan <> 4 and post_trial_start <= '2020-12-30'
+GROUP BY post_trial_plan;
+
+/*9. How many days on average does it take for a customer to an annual plan from the day they join Foodie-Fi?
 10. Can you further breakdown this average value into 30 day periods (i.e. 0-30 days, 31-60 days etc)
 11. How many customers downgraded from a pro monthly to a basic monthly plan in 2020?
