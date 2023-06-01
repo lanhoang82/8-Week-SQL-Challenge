@@ -11,4 +11,4 @@ This is my commitment to maintaining and improving my SQL skills with the help o
 - Case Study #7 - Balanced Tree Clothing Co.
 - Case Study #8 - Fresh Segments
 
-More information can be found here: https://8weeksqlchallenge.com/
+More information can be found in the following link: https://8weeksqlchallenge.com/
