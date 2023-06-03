@@ -143,9 +143,33 @@ WHERE post_trial_plan <> 4 and post_trial_start <= '2020-12-30'
 GROUP BY post_trial_plan;
 
 /*9. How many days on average does it take for a customer to an annual plan from the day they join Foodie-Fi?
-10. Can you further breakdown this average value into 30 day periods (i.e. 0-30 days, 31-60 days etc)
+Customers going from plan 0 to 3
+self join
+Max day - Min day, Max Day with plan_id = 3. Assuming customers joining the platform via trial*/
 
-11. How many customers downgraded from a pro monthly to a basic monthly plan in 2020?
+SELECT * FROM subscriptions
+WHERE plan_id = 3;
+
+WITH trial_start AS(
+	SELECT customer_id, start_date
+	FROM subscriptions
+	WHERE plan_id = 0
+),
+annual_end AS (
+	SELECT customer_id, start_date
+	FROM subscriptions
+	WHERE plan_id = 3
+)
+SELECT ROUND(AVG(an.start_date - tr.start_date), 0) "avg_date_diff"
+FROM trial_start AS tr
+INNER JOIN annual_end AS an
+ON tr.customer_id = an.customer_id
+WHERE tr.start_date < an.start_date
+
+/*10. Can you further breakdown this average value into 30 day periods (i.e. 0-30 days, 31-60 days etc)*/
+
+
+/*11. How many customers downgraded from a pro monthly to a basic monthly plan in 2020?
 Meaning that they go from plan 2 to plan 1 in 2020
 Self join, date of plan 2 small than date of plan 1*/
 
