@@ -167,7 +167,30 @@ ON tr.customer_id = an.customer_id
 WHERE tr.start_date < an.start_date
 
 /*10. Can you further breakdown this average value into 30 day periods (i.e. 0-30 days, 31-60 days etc)*/
-
+WITH trial_start AS(
+	SELECT customer_id, start_date
+	FROM subscriptions
+	WHERE plan_id = 0
+),
+annual_end AS (
+	SELECT customer_id, start_date
+	FROM subscriptions
+	WHERE plan_id = 3
+),
+days_to_upgrade_cte AS (
+	SELECT tr.customer_id "customer_id", an.start_date - tr.start_date "day_diff", 
+		WIDTH_BUCKET(an.start_date - tr.start_date, 0, 365, 12) "bucket" /*breaking the dates into 
+																		12 months of the year or 30-day increments*/
+	FROM trial_start AS tr
+	INNER JOIN annual_end AS an
+	ON tr.customer_id = an.customer_id
+	WHERE tr.start_date < an.start_date
+)
+SELECT (((bucket - 1) * 30) || '-' || (bucket *30) || ' days') "period_to_upgrade",
+	COUNT(customer_id) "cust_num"
+FROM days_to_upgrade_cte
+GROUP BY bucket
+ORDER BY bucket
 
 /*11. How many customers downgraded from a pro monthly to a basic monthly plan in 2020?
 Meaning that they go from plan 2 to plan 1 in 2020
