@@ -1,6 +1,4 @@
-CREATE SCHEMA data_bank;
-SET search_path = data_bank;
-
+DROP TABLE IF EXISTS regions;
 CREATE TABLE regions (
   region_id INTEGER,
   region_name VARCHAR(9)
@@ -15,7 +13,7 @@ VALUES
   ('4', 'Asia'),
   ('5', 'Europe');
 
-
+DROP TABLE IF EXISTS customer_nodes;
 CREATE TABLE customer_nodes (
   customer_id INTEGER,
   region_id INTEGER,
@@ -3528,6 +3526,7 @@ VALUES
   ('499', '5', '1', '2020-02-03', '9999-12-31'),
   ('500', '2', '2', '2020-04-15', '9999-12-31');
 
+DROP TABLE IF EXISTS customer_transactions;
 CREATE TABLE customer_transactions (
   customer_id INTEGER,
   txn_date DATE,
