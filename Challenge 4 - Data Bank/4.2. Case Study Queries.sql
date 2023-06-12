@@ -5,7 +5,8 @@ request!
 
 A. Customer Nodes Exploration
 1. How many unique nodes are there on the Data Bank system?*/
-SELECT COUNT(DISTINCT node_id) FROM customer_nodes;
+SELECT COUNT(DISTINCT node_id) "num_nodes"
+FROM customer_nodes;
 
 /*2. What is the number of nodes per region? */
 SELECT region_id, COUNT(node_id)
@@ -13,22 +14,22 @@ FROM customer_nodes
 GROUP BY region_id
 ORDER BY region_id ASC;
 
-/*How many customers are allocated to each region?*/
+/*3. How many customers are allocated to each region?*/
 SELECT region_id, COUNT(DISTINCT customer_id) "num_cust"
 FROM customer_nodes
 GROUP BY region_id
 ORDER BY num_cust DESC;
 
-/*How many days on average are customers reallocated to a different node? (how many days do customers
+/*4. How many days on average are customers reallocated to a different node? (how many days do customers
 stay on the same node before switching?*/
 WITH day_diff_cte AS (
 	SELECT customer_id, node_id, start_date, end_date, end_date-start_date "day_diff"
 	FROM customer_nodes
 )
-SELECT customer_id, node_id, ROUND(AVG(day_diff), 2)
+SELECT customer_id, ROUND(AVG(day_diff), 2) "avg_days"
 FROM day_diff_cte
 WHERE end_date <> '9999-12-31' /*assuming this indicates the present node that hasn't been changed*/
-GROUP BY customer_id, node_id
+GROUP BY customer_id
 ORDER BY customer_id ASC;
 
 SELECT customer_id, node_id, start_date, end_date
