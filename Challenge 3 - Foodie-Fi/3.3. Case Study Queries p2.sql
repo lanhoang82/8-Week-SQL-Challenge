@@ -16,3 +16,32 @@ FROM subscriptions AS s
 LEFT JOIN plan AS pl
 ON s.plan_id = pl.plan_id
 WHERE start_date <= '2020-12-30' AND start_date >= '2020-01-01' AND s.plan_id <> 0
+ORDER BY customer_id ASC
+
+DROP TABLE IF EXISTS payments;
+CREATE TABLE payments (
+	customer_id INTEGER,
+	plan_id INTEGER,
+	plan_name VARCHAR(13),
+	payment_date DATE,
+	payment_amount DECIMAL(5,2),
+	payment_order INTEGER
+);
+
+INSERT INTO payments (customer_id, plan_id, plan_name, payment_date, payment_amount, payment_order)
+SELECT
+  s.customer_id,
+  s.plan_id,
+  pl.plan_name,
+  s.start_date + INTERVAL '1 MONTH' * (EXTRACT(YEAR FROM AGE('2020-12-31'::date, s.start_date)) * 12 + EXTRACT(MONTH FROM AGE('2020-12-31'::date, s.start_date))) AS payment_date,
+  pl.price,
+  1 AS payment_order
+FROM
+  subscriptions s
+JOIN
+  plan pl ON s.plan_id = pl.plan_id
+WHERE
+  pl.plan_id IN (1, 2)
+  AND s.start_date <= '2020-12-31'::date;
+  
+SELECT * FROM payments;
