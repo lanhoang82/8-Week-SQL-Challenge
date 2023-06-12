@@ -1,0 +1,69 @@
+## Case Study 4 - Data Bank 
+![image](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/55e56d01-37d5-4a13-a58c-5b90f6c70fd6)
+
+## Table of Content
+- Introduction
+- Entity Relationship Diagram
+- Business Questions and Solutions via SQL Codes
+
+### Introduction
+
+There is a new innovation in the financial industry called Neo-Banks: new aged digital only banks without physical branches. Danny thought that there should be some sort of intersection between these new age banks, cryptocurrency and the data world…so he decides to launch a new initiative - Data Bank!
+
+Data Bank runs just like any other digital bank - but it isn’t only for banking activities, they also have the world’s most secure distributed data storage platform!
+
+Customers are allocated cloud data storage limits which are directly linked to how much money they have in their accounts. There are a few interesting caveats that go with this business model, and this is where the Data Bank team need your help! The management team at Data Bank want to increase their total customer base - but also need some help tracking just how much data storage their customers will need.
+
+This case study is all about calculating metrics, growth and helping the business analyse their data in a smart way to better forecast and plan for their future developments!
+
+### Entity Relationship Diagram
+![image](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/ce77c552-297e-41d9-acb1-aae6cb5e4a8e)
+
+
+### Business Questions and Solutions via SQL Codes
+
+#### A. Customer Nodes Exploration
+
+##### 1. How many unique nodes are there on the Data Bank system?
+
+```
+SELECT COUNT(DISTINCT node_id) FROM customer_nodes;
+```
+
+![4 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/01ad8dcb-de1c-4a82-afd4-e3e6a1a5a833)
+
+##### 2. What is the number of nodes per region? 
+
+```
+SELECT region_id, COUNT(node_id)
+FROM customer_nodes
+GROUP BY region_id
+ORDER BY region_id ASC;
+```
+![4 2](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/ad4c3a85-8261-4759-bd0d-2ca9a83525f1)
+
+
+##### 3. How many customers are allocated to each region?
+
+```
+SELECT region_id, COUNT(DISTINCT customer_id) "num_cust"
+FROM customer_nodes
+GROUP BY region_id
+ORDER BY num_cust DESC;
+```
+![4 3](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/df6f2938-367d-4e21-bc44-762464dd2ce9)
+
+##### 4. How many days on average are customers reallocated to a different node? (how many days do customers stay on the same node before switching?
+
+```
+WITH day_diff_cte AS (
+	SELECT customer_id, node_id, start_date, end_date, end_date-start_date "day_diff"
+	FROM customer_nodes
+)
+SELECT customer_id, ROUND(AVG(day_diff), 2) "avg_days"
+FROM day_diff_cte
+WHERE end_date <> '9999-12-31' /*assuming this indicates the present node that hasn't been changed*/
+GROUP BY customer_id
+ORDER BY customer_id ASC;
+```
+![4 4](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/2bfd0862-1fe8-46c5-9034-c4c2ec2f797f)
