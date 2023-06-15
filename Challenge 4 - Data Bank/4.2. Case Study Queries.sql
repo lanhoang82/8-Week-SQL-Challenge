@@ -26,19 +26,30 @@ WITH day_diff_cte AS (
 	SELECT customer_id, node_id, start_date, end_date, end_date-start_date "day_diff"
 	FROM customer_nodes
 )
-SELECT customer_id, ROUND(AVG(day_diff), 2) "avg_days"
+SELECT ROUND(AVG(day_diff), 2) "avg_days"
 FROM day_diff_cte
-WHERE end_date <> '9999-12-31' /*assuming this indicates the present node that hasn't been changed*/
-GROUP BY customer_id
-ORDER BY customer_id ASC;
+WHERE end_date <> '9999-12-31'; /*assuming this indicates the present node that hasn't been changed*/
 
 SELECT customer_id, node_id, start_date, end_date
 FROM customer_nodes
 WHERE customer_id = 30
 
-/*What is the median, 80th and 95th percentile for this same reallocation days metric for each region?
+/*5. What is the median, 80th and 95th percentile for this same reallocation days metric for each region?*/
+WITH day_diff_cte AS (
+	SELECT customer_id, region_id, node_id, start_date, end_date, end_date-start_date "day_diff"
+	FROM customer_nodes
+)
+SELECT region_id, 
+		ROUND(AVG(day_diff), 2) "avg_days", 
+		PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY day_diff) "median",
+		PERCENTILE_CONT(0.8) WITHIN GROUP (ORDER BY day_diff) "80_percentile",
+		PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY day_diff) "95_percentile"
+FROM day_diff_cte
+WHERE end_date <> '9999-12-31' /*assuming this indicates the present node that hasn't been changed*/
+GROUP BY region_id
+ORDER BY region_id ASC;
 
-B. Customer Transactions
+/*B. Customer Transactions
 What is the unique count and total amount for each transaction type?
 What is the average total historical deposit counts and amounts for all customers?
 For each month - how many Data Bank customers make more than 1 deposit and either 1 purchase or 1 
