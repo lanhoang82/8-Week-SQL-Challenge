@@ -55,6 +55,7 @@ ORDER BY num_cust DESC;
 
 ##### 4. How many days on average are customers reallocated to a different node? (how many days do customers stay on the same node before switching?
 
+Per customer:
 ```
 WITH day_diff_cte AS (
 	SELECT customer_id, node_id, start_date, end_date, end_date-start_date "day_diff"
@@ -67,3 +68,48 @@ GROUP BY customer_id
 ORDER BY customer_id ASC;
 ```
 ![4 4](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/2bfd0862-1fe8-46c5-9034-c4c2ec2f797f)
+
+For all customers:
+
+```
+WITH day_diff_cte AS (
+	SELECT customer_id, node_id, start_date, end_date, end_date-start_date "day_diff"
+	FROM customer_nodes
+)
+SELECT ROUND(AVG(day_diff), 2) "avg_days"
+FROM day_diff_cte
+WHERE end_date <> '9999-12-31';
+ ```
+![4 4 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/fbbd07c7-5993-40a8-922f-e5542ef8d40c)
+
+
+##### 5. What is the median, 80th and 95th percentile for this same reallocation days metric for each region?
+
+```
+WITH day_diff_cte AS (
+	SELECT customer_id, region_id, node_id, start_date, end_date, end_date-start_date "day_diff"
+	FROM customer_nodes
+)
+SELECT region_id, 
+		ROUND(AVG(day_diff), 2) "avg_days", 
+		PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY day_diff) "median",
+		PERCENTILE_CONT(0.8) WITHIN GROUP (ORDER BY day_diff) "80_percentile",
+		PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY day_diff) "95_percentile"
+FROM day_diff_cte
+WHERE end_date <> '9999-12-31' 
+GROUP BY region_id
+ORDER BY region_id ASC;
+```
+![4 5](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/ced596e7-01a0-419b-8f9b-ca93291984e4)
+
+#### B. Customer Transactions
+##### 1. What is the unique count and total amount for each transaction type?
+
+```
+SELECT txn_type, COUNT(DISTINCT CONCAT(customer_id::text, txn_date::text)) "unique_txn_count",
+				SUM(txn_amount) "total_amount"
+FROM customer_transactions
+GROUP BY txn_type;
+```
+![b 4 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/770d6ca4-2af3-43de-af32-f59761114aef)
+
