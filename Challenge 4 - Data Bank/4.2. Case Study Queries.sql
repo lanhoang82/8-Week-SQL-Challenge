@@ -30,10 +30,6 @@ SELECT ROUND(AVG(day_diff), 2) "avg_days"
 FROM day_diff_cte
 WHERE end_date <> '9999-12-31'; /*assuming this indicates the present node that hasn't been changed*/
 
-SELECT customer_id, node_id, start_date, end_date
-FROM customer_nodes
-WHERE customer_id = 30
-
 /*5. What is the median, 80th and 95th percentile for this same reallocation days metric for each region?*/
 WITH day_diff_cte AS (
 	SELECT customer_id, region_id, node_id, start_date, end_date, end_date-start_date "day_diff"
@@ -50,15 +46,24 @@ GROUP BY region_id
 ORDER BY region_id ASC;
 
 /*B. Customer Transactions
-What is the unique count and total amount for each transaction type?
-What is the average total historical deposit counts and amounts for all customers?
-For each month - how many Data Bank customers make more than 1 deposit and either 1 purchase or 1 
+1. What is the unique count and total amount for each transaction type?*/
+SELECT * FROM customer_transactions
+LIMIT 5;
+
+SELECT txn_type, COUNT(DISTINCT CONCAT(customer_id::text, txn_date::text)) "unique_txn_count",
+				SUM(txn_amount) "total_amount"
+FROM customer_transactions
+GROUP BY txn_type;
+
+
+/*2What is the average total historical deposit counts and amounts for all customers?
+3. For each month - how many Data Bank customers make more than 1 deposit and either 1 purchase or 1 
 withdrawal in a single month?
-What is the closing balance for each customer at the end of the month?
-What is the percentage of customers who increase their closing balance by more than 5%?
+4. What is the closing balance for each customer at the end of the month?
+5. What is the percentage of customers who increase their closing balance by more than 5%?
 
 C. Data Allocation Challenge
-To test out a few different hypotheses - the Data Bank team wants to run an experiment where different 
+6. To test out a few different hypotheses - the Data Bank team wants to run an experiment where different 
 groups of customers would be allocated data using 3 different options:
 
 Option 1: data is allocated based off the amount of money at the end of the previous month
