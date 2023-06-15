@@ -1,5 +1,6 @@
 ## Case Study 4 - Data Bank 
-![image](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/55e56d01-37d5-4a13-a58c-5b90f6c70fd6)
+
+![Week 4 Cover](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/df853fc2-ad58-42fe-8270-3febc44e7f79)
 
 ## Table of Content
 - Introduction
