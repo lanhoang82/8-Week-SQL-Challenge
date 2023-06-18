@@ -30,7 +30,7 @@ This case study is all about calculating metrics, growth and helping the busines
 ```
 SELECT COUNT(DISTINCT node_id) FROM customer_nodes;
 ```
-
+###### Answer:
 ![4 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/01ad8dcb-de1c-4a82-afd4-e3e6a1a5a833)
 
 ##### 2. What is the number of nodes per region? 
@@ -41,6 +41,7 @@ FROM customer_nodes
 GROUP BY region_id
 ORDER BY region_id ASC;
 ```
+###### Answer:
 ![4 2](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/ad4c3a85-8261-4759-bd0d-2ca9a83525f1)
 
 
@@ -52,6 +53,7 @@ FROM customer_nodes
 GROUP BY region_id
 ORDER BY num_cust DESC;
 ```
+###### Answer:
 ![4 3](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/df6f2938-367d-4e21-bc44-762464dd2ce9)
 
 ##### 4. How many days on average are customers reallocated to a different node? (how many days do customers stay on the same node before switching?
@@ -68,6 +70,7 @@ WHERE end_date <> '9999-12-31' /*assuming this indicates the present node that h
 GROUP BY customer_id
 ORDER BY customer_id ASC;
 ```
+###### Answer:
 ![4 4](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/2bfd0862-1fe8-46c5-9034-c4c2ec2f797f)
 
 For all customers:
@@ -81,6 +84,7 @@ SELECT ROUND(AVG(day_diff), 2) "avg_days"
 FROM day_diff_cte
 WHERE end_date <> '9999-12-31';
  ```
+###### Answer:
 ![4 4 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/fbbd07c7-5993-40a8-922f-e5542ef8d40c)
 
 
@@ -101,6 +105,7 @@ WHERE end_date <> '9999-12-31'
 GROUP BY region_id
 ORDER BY region_id ASC;
 ```
+###### Answer:
 ![4 5](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/ced596e7-01a0-419b-8f9b-ca93291984e4)
 
 #### B. Customer Transactions
@@ -112,6 +117,7 @@ SELECT txn_type, COUNT(DISTINCT CONCAT(customer_id::text, txn_date::text)) "uniq
 FROM customer_transactions
 GROUP BY txn_type;
 ```
+###### Answer:
 ![b 4 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/770d6ca4-2af3-43de-af32-f59761114aef)
 
 
@@ -127,7 +133,7 @@ WITH cust_hist_agg_cte AS (
 SELECT ROUND(AVG(deposit_count),2) "avg_deposit", ROUND(AVG(deposit_amount),2) "avg_amount"
 FROM cust_hist_agg_cte;
 ```
-
+###### Answer:
 ![b 4 2](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/8b9536ba-2c52-44d3-85eb-8f7329400481)
 
 ##### 3. For each month - how many Data Bank customers make more than 1 deposit and either 1 purchase or 1 withdrawal in a single month?
@@ -151,5 +157,5 @@ FROM customer_txn_mo_cte
 WHERE deposit_count > 1 AND (withdrawal_count = 1 or purchase_count = 1)		
 GROUP BY txn_month;
 ```
-
+###### Answer:
 ![b 4 3](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/3c9652af-1394-40be-8df4-96b6c88aa339)
