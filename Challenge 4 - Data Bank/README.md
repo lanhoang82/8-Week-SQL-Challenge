@@ -114,3 +114,42 @@ GROUP BY txn_type;
 ```
 ![b 4 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/770d6ca4-2af3-43de-af32-f59761114aef)
 
+
+##### 2. What is the average total historical deposit counts and amounts for all customers?
+
+```
+WITH cust_hist_agg_cte AS (
+	SELECT customer_id, (COUNT(customer_id)) "deposit_count", (SUM(txn_amount)) "deposit_amount"
+	FROM customer_transactions
+	WHERE txn_type = 'deposit'
+	GROUP BY customer_id
+)
+SELECT ROUND(AVG(deposit_count),2) "avg_deposit", ROUND(AVG(deposit_amount),2) "avg_amount"
+FROM cust_hist_agg_cte;
+```
+
+![b 4 2](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/8b9536ba-2c52-44d3-85eb-8f7329400481)
+
+##### 3. For each month - how many Data Bank customers make more than 1 deposit and either 1 purchase or 1 withdrawal in a single month?
+
+```
+WITH customer_txn_mo_cte AS (
+	SELECT 
+		DATE_PART('month', txn_date) AS "txn_month",
+		customer_id,
+		SUM(CASE WHEN txn_type = 'deposit' THEN 1 ELSE 0 END) "deposit_count",
+		SUM(CASE WHEN txn_type = 'withdrawal' THEN 1 ELSE 0 END) "withdrawal_count",
+		SUM(CASE WHEN txn_type = 'purchase' THEN 1 ELSE 0 END) "purchase_count"
+		
+	FROM customer_transactions
+	GROUP BY txn_month, customer_id
+	ORDER BY txn_month, customer_id
+)
+
+SELECT txn_month, COUNT(customer_id) "cust_num"
+FROM customer_txn_mo_cte
+WHERE deposit_count > 1 AND (withdrawal_count = 1 or purchase_count = 1)		
+GROUP BY txn_month;
+```
+
+![b 4 3](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/3c9652af-1394-40be-8df4-96b6c88aa339)
