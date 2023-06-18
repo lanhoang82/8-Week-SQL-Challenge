@@ -26,7 +26,7 @@ WITH day_diff_cte AS (
 	SELECT customer_id, node_id, start_date, end_date, end_date-start_date "day_diff"
 	FROM customer_nodes
 )
-SELECT ROUND(AVG(day_diff), 2) "avg_days"
+SELECT ROUND(AVG(day_diff), 2) "avg_days_all"
 FROM day_diff_cte
 WHERE end_date <> '9999-12-31'; /*assuming this indicates the present node that hasn't been changed*/
 
@@ -41,25 +41,56 @@ SELECT region_id,
 		PERCENTILE_CONT(0.8) WITHIN GROUP (ORDER BY day_diff) "80_percentile",
 		PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY day_diff) "95_percentile"
 FROM day_diff_cte
-WHERE end_date <> '9999-12-31' /*assuming this indicates the present node that hasn't been changed*/
+WHERE end_date <> '9999-12-31' 
 GROUP BY region_id
 ORDER BY region_id ASC;
 
 /*B. Customer Transactions
 1. What is the unique count and total amount for each transaction type?*/
-SELECT * FROM customer_transactions
-LIMIT 5;
 
-SELECT txn_type, COUNT(DISTINCT CONCAT(customer_id::text, txn_date::text)) "unique_txn_count",
-				SUM(txn_amount) "total_amount"
+SELECT txn_type, 
+		COUNT(DISTINCT CONCAT(customer_id::text, txn_date::text)) "unique_txn_count",
+		SUM(txn_amount) "total_amount"
 FROM customer_transactions
 GROUP BY txn_type;
 
 
-/*2What is the average total historical deposit counts and amounts for all customers?
-3. For each month - how many Data Bank customers make more than 1 deposit and either 1 purchase or 1 
-withdrawal in a single month?
-4. What is the closing balance for each customer at the end of the month?
+/*2. What is the average total historical deposit counts and amounts for all customers?*/
+WITH cust_hist_agg_cte AS (
+	SELECT customer_id, (COUNT(customer_id)) "deposit_count", (SUM(txn_amount)) "deposit_amount"
+	FROM customer_transactions
+	WHERE txn_type = 'deposit'
+	GROUP BY customer_id
+)
+SELECT ROUND(AVG(deposit_count),2) "avg_deposit", ROUND(AVG(deposit_amount),2) "avg_amount"
+FROM cust_hist_agg_cte;
+
+/*3. For each month - how many Data Bank customers make more than 1 deposit and either 1 purchase or 1 
+withdrawal in a single month?*/
+SELECT * 
+FROM customer_transactions;
+
+WITH customer_txn_mo_cte AS (
+	SELECT 
+		DATE_PART('month', txn_date) AS "txn_month",
+		customer_id,
+		SUM(CASE WHEN txn_type = 'deposit' THEN 1 ELSE 0 END) "deposit_count",
+		SUM(CASE WHEN txn_type = 'withdrawal' THEN 1 ELSE 0 END) "withdrawal_count",
+		SUM(CASE WHEN txn_type = 'purchase' THEN 1 ELSE 0 END) "purchase_count"
+		
+	FROM customer_transactions
+	GROUP BY txn_month, customer_id
+	ORDER BY txn_month, customer_id
+)
+
+SELECT txn_month, COUNT(customer_id)
+FROM customer_txn_mo_cte
+WHERE deposit_count > 1 AND (withdrawal_count = 1 or purchase_count = 1)		
+GROUP BY txn_month
+
+
+
+/*4. What is the closing balance for each customer at the end of the month?
 5. What is the percentage of customers who increase their closing balance by more than 5%?
 
 C. Data Allocation Challenge
