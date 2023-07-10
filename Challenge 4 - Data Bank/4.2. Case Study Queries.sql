@@ -83,15 +83,21 @@ WITH customer_txn_mo_cte AS (
 	ORDER BY txn_month, customer_id
 )
 
-SELECT txn_month, COUNT(customer_id)
+SELECT txn_month, COUNT(customer_id) "cust_num"
 FROM customer_txn_mo_cte
 WHERE deposit_count > 1 AND (withdrawal_count = 1 or purchase_count = 1)		
-GROUP BY txn_month
-
-
+GROUP BY txn_month;
 
 /*4. What is the closing balance for each customer at the end of the month?
-5. What is the percentage of customers who increase their closing balance by more than 5%?
+perhaps I should generate the ending date of each month and closing balance.
+The trick is for months without a transaction, the amount is 0 */
+
+SELECT customer_id, DATE_PART('month', txn_date) AS "txn_month", txn_date, txn_type, txn_amount	
+FROM customer_transactions
+ORDER BY customer_id, txn_date
+
+/*5. What is the percentage of customers who increase their closing balance by more than 5%?
+
 
 C. Data Allocation Challenge
 6. To test out a few different hypotheses - the Data Bank team wants to run an experiment where different 
