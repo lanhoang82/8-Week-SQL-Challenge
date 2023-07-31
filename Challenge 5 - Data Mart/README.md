@@ -13,13 +13,13 @@ Data Mart is Danny’s latest venture and after running international operations
 
 In June 2020 - large scale supply changes were made at Data Mart. All Data Mart products now use sustainable packaging methods in every single step from the farm all the way to the customer.
 
-Danny needs help to quantify the impact of this change on the sales performance for Data Mart and its separate business areas.
+Danny needs help quantifying the impact of this change on the sales performance for Data Mart and its separate business areas.
 
 The key business question he wants to answer are the following:
 
 - What was the quantifiable impact of the changes introduced in June 2020?
 - Which platform, region, segment and customer types were the most impacted by this change?
-- What can we do about future introduction of similar sustainability updates to the business to minimise impact on sales?
+- What can we do about future introduction of similar sustainability updates to the business to minimize impact on sales?
 
 ### Entity Relationship Diagram
 
@@ -53,14 +53,17 @@ In a single query, perform the following operations and generate a new table in 
 
 ###### Answer:
 
-````
+```
 DROP TABLE IF EXISTS data_mart.clean_weekly_sales;
-
 CREATE TABLE data_mart.clean_weekly_sales AS -- create a new table based on the result set of a SELECT query
 	SELECT TO_DATE(week_date, 'dd/mm/yy') AS week_date,
 	EXTRACT (WEEK FROM TO_DATE(week_date, 'dd/mm/yy')) AS week_number,
 	EXTRACT (MONTH FROM TO_DATE(week_date, 'dd/mm/yy')) AS month_number,
 	EXTRACT (YEAR FROM TO_DATE(week_date, 'dd/mm/yy')) AS calendar_year,
+	region,
+	platform,
+	segment,
+	customer_type, transactions, sales,
 	CASE 
 		WHEN segment LIKE '%1' THEN 'Young Adults'
 		WHEN segment LIKE '%2' THEN 'Middle Aged'
@@ -78,19 +81,84 @@ FROM weekly_sales;
 SELECT *
 FROM clean_weekly_sales
 LIMIT 5;
-````
+
+SELECT *
+FROM clean_weekly_sales
+LIMIT 5;
+```
 
 
 ![a 5 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/1ed617e8-227f-47ff-b8fe-dae4946f9f91)
 
 
 #### B. Data Exploration
+
 1. What day of the week is used for each week_date value?
+###### Answer: 
+```
+SELECT DISTINCT EXTRACT('dow' FROM week_date)
+FROM clean_weekly_sales;
+```
+![w5 5 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/6d7873fb-9ba5-4e7d-b08b-efca9e3605ce)
+
+Per PostgreSQL convention, weekday `1` signifies Monday.
+
 2. What range of week numbers are missing from the dataset?
+###### Answer:
+```
+WITH all_week_num_cte AS(
+	SELECT DISTINCT EXTRACT(WEEK FROM all_week_date) "all_week_number"
+	FROM generate_series(
+		(SELECT MIN(week_date)::date FROM clean_weekly_sales),
+		(SELECT MAX(week_date)::date FROM clean_weekly_sales),
+		'1 week'::interval) AS all_week_date
+	ORDER BY all_week_number
+)
+SELECT all_week_number
+FROM all_week_num_cte
+WHERE all_week_number NOT IN (SELECT week_number FROM clean_weekly_sales)
+ORDER BY all_week_number;
+```
+![w5 5 2](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/ee633002-b5aa-4012-a2c9-04acaebdc3ab)
+
 3. How many total transactions were there for each year in the dataset?
+###### Answer:
+```
+SELECT calendar_year, SUM(transactions) "total_txn"
+FROM clean_weekly_sales
+GROUP BY calendar_year
+ORDER BY total_txn DESC;
+```
+![w5 5 3](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/e1c20949-a614-4412-9cd9-08a238995389)
+
 4. What are the total sales for each region for each month?
+###### Answer:
+```
+SELECT region, month_number, SUM(sales) "total_sales"
+FROM clean_weekly_sales
+GROUP BY region, month_number
+ORDER BY region, month_number ASC;
+```
+![w5 5 4](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/4af3a1d1-ae23-4343-9fa9-092ff21a26a7)
+
 5. What is the total count of transactions for each platform
+###### Answer:
+```
+SELECT platform, SUM(transactions) "total_txn"
+FROM clean_weekly_sales
+GROUP BY platform
+ORDER BY total_txn DESC;
+```
+![w5 5 5](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/242a441a-b250-416c-ad00-7a72082af864)
+
 6. What is the percentage of sales for Retail vs Shopify for each month?
+###### Answer:
+   
 7. What is the percentage of sales by demographic for each year in the dataset?
+###### Answer:    
+
 8. Which age_band and demographic values contribute the most to Retail sales?
+###### Answer:
+    
 9. Can we use the avg_transaction column to find the average transaction size for each year for Retail vs Shopify? If not - how would you calculate it instead?
+###### Answer:
