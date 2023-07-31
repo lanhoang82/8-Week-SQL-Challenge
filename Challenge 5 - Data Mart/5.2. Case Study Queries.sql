@@ -25,6 +25,10 @@ CREATE TABLE data_mart.clean_weekly_sales AS -- create a new table based on the 
 	EXTRACT (WEEK FROM TO_DATE(week_date, 'dd/mm/yy')) AS week_number,
 	EXTRACT (MONTH FROM TO_DATE(week_date, 'dd/mm/yy')) AS month_number,
 	EXTRACT (YEAR FROM TO_DATE(week_date, 'dd/mm/yy')) AS calendar_year,
+	region,
+	platform,
+	segment,
+	customer_type, transactions, sales,
 	CASE 
 		WHEN segment LIKE '%1' THEN 'Young Adults'
 		WHEN segment LIKE '%2' THEN 'Middle Aged'
@@ -45,12 +49,45 @@ LIMIT 5;
 
 /*B. Data Exploration
 
-1. What day of the week is used for each week_date value?
-2. What range of week numbers are missing from the dataset?
-3. How many total transactions were there for each year in the dataset?
-4. What is the total sales for each region for each month?
-5. What is the total count of transactions for each platform
-6. What is the percentage of sales for Retail vs Shopify for each month?
+1. What day of the week is used for each week_date value?*/
+
+SELECT DISTINCT EXTRACT('dow' FROM week_date)
+FROM clean_weekly_sales;
+
+/*2. What range of week numbers are missing from the dataset?*/
+WITH all_week_num_cte AS(
+	SELECT DISTINCT EXTRACT(WEEK FROM all_week_date) "all_week_number"
+	FROM generate_series(
+		(SELECT MIN(week_date)::date FROM clean_weekly_sales),
+		(SELECT MAX(week_date)::date FROM clean_weekly_sales),
+		'1 week'::interval) AS all_week_date
+	ORDER BY all_week_number
+)
+SELECT all_week_number
+FROM all_week_num_cte
+WHERE all_week_number NOT IN (SELECT week_number FROM clean_weekly_sales)
+ORDER BY all_week_number;
+
+/*3. How many total transactions were there for each year in the dataset?*/
+
+SELECT calendar_year, SUM(transactions) "total_txn"
+FROM clean_weekly_sales
+GROUP BY calendar_year
+ORDER BY total_txn DESC;
+
+/*4. What is the total sales for each region for each month?*/
+SELECT region, month_number, SUM(sales) "total_sales"
+FROM clean_weekly_sales
+GROUP BY region, month_number
+ORDER BY region, month_number ASC;
+
+/*5. What is the total count of transactions for each platform*/
+SELECT platform, SUM(transactions) "total_txn"
+FROM clean_weekly_sales
+GROUP BY platform
+ORDER BY total_txn DESC;
+
+/*6. What is the percentage of sales for Retail vs Shopify for each month?
 7. What is the percentage of sales by demographic for each year in the dataset?
 8. Which age_band and demographic values contribute the most to Retail sales?
 9. Can we use the avg_transaction column to find the average transaction size for each year for Retail vs 
