@@ -41,10 +41,10 @@ CREATE TABLE data_mart.clean_weekly_sales AS -- create a new table based on the 
 		ELSE 'Unknown'
 		END AS demographic,
 	ROUND(sales/transactions, 2) AS avg_transaction
-FROM weekly_sales;
+FROM data_mart.weekly_sales;
 
 SELECT *
-FROM clean_weekly_sales
+FROM data_mart.clean_weekly_sales
 LIMIT 5;
 
 /*B. Data Exploration
@@ -87,13 +87,41 @@ FROM clean_weekly_sales
 GROUP BY platform
 ORDER BY total_txn DESC;
 
-/*6. What is the percentage of sales for Retail vs Shopify for each month?
-7. What is the percentage of sales by demographic for each year in the dataset?
-8. Which age_band and demographic values contribute the most to Retail sales?
-9. Can we use the avg_transaction column to find the average transaction size for each year for Retail vs 
-Shopify? If not - how would you calculate it instead?
+/*6. What is the percentage of sales for Retail vs Shopify for each month?*/
 
-C. Before & After Analysis
+SELECT platform, month_number, SUM(sales) "monthly_sales_platform",
+	SUM(SUM(sales)) OVER (PARTITION BY month_number) "total_sales_monthly",
+	ROUND((SUM(sales)/SUM(SUM(sales)) OVER (PARTITION BY month_number))*100, 2) "sales_pct"
+FROM data_mart.clean_weekly_sales
+GROUP BY month_number, platform
+ORDER BY month_number, platform;
+
+/*7. What is the percentage of sales by demographic for each year in the dataset?*/
+SELECT demographic, SUM(sales) "sales_by_demo",
+	SUM(SUM(sales)) OVER(PARTITION BY demographic) "total_sales_by_demo",
+	ROUND((SUM(sales)/SUM(SUM(sales)) OVER())*100, 2) "sales_pct" 
+FROM data_mart.clean_weekly_sales
+GROUP BY demographic
+ORDER BY sales_pct DESC;
+
+/*8. Which age_band and demographic values contribute the most to Retail sales?*/
+SELECT age_band, demographic, SUM(sales) "total_sales"
+FROM data_mart.clean_weekly_sales
+WHERE platform = 'Retail'
+GROUP BY age_band, demographic
+ORDER BY total_sales DESC;
+
+/*9. Can we use the avg_transaction column to find the average transaction size for each year for Retail vs 
+Shopify? If not - how would you calculate it instead?*/
+SELECT calendar_year, platform, 
+		SUM(sales) "total_sales",
+		SUM(transactions) "total_txn",
+		ROUND(SUM(sales)/SUM(transactions),2) "avg_txn_size"
+FROM data_mart.clean_weekly_sales
+GROUP BY calendar_year, platform
+ORDER BY calendar_year, platform;
+
+/*C. Before & After Analysis
 This technique is usually used when we inspect an important event and want to inspect the impact before and 
 after a certain point in time.
 
