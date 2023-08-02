@@ -1,13 +1,13 @@
-## Case Study 5 - Data Mart
+# Case Study 5 - Data Mart
 
 ![Week 5 Cover](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/ecf1d520-3edb-4c50-ac30-f3450ef35386)
 
-## Table of Content
+# Table of Content
 - Introduction
 - Entity Relationship Diagram
 - Business Questions and Solutions via SQL Codes
 
-### Introduction
+## Introduction
 
 Data Mart is Danny’s latest venture and after running international operations for his online supermarket that specialises in fresh produce - support is needed to analyse his sales performance.
 
@@ -21,7 +21,7 @@ The key business question he wants to answer are the following:
 - Which platform, region, segment and customer types were the most impacted by this change?
 - What can we do about future introduction of similar sustainability updates to the business to minimize impact on sales?
 
-### Entity Relationship Diagram
+## Entity Relationship Diagram
 
 ![image](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/3bc09407-4d57-4f9a-8eb6-9b463f16f309)
 
@@ -31,9 +31,9 @@ Some further details about the dataset:
 - Customer segment and customer_type data relates to personal age and demographics information that is shared with Data Mart transactions is the count of unique purchases made through Data Mart and sales is the actual dollar amount of purchases
 - Each record in the dataset is related to a specific aggregated slice of the underlying sales data rolled up into a week_date value which represents the start of the sales week.
 
-### Business Questions and Solutions via SQL Codes
+## Business Questions and Solutions via SQL Codes
 
-#### A. Data Cleansing Steps
+### A. Data Cleansing Steps
 In a single query, perform the following operations and generate a new table in the data_mart schema named clean_weekly_sales:
 
 1. Convert the week_date to a DATE format
@@ -91,9 +91,9 @@ LIMIT 5;
 ![a 5 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/1ed617e8-227f-47ff-b8fe-dae4946f9f91)
 
 
-#### B. Data Exploration
+### B. Data Exploration
 
-1. What day of the week is used for each week_date value?
+#### 1. What day of the week is used for each week_date value?
 ###### Answer: 
 ```
 SELECT DISTINCT EXTRACT('dow' FROM week_date)
@@ -103,7 +103,7 @@ FROM clean_weekly_sales;
 
 Per PostgreSQL convention, weekday `1` signifies Monday.
 
-2. What range of week numbers are missing from the dataset?
+#### 2. What range of week numbers are missing from the dataset?
 ###### Answer:
 ```
 WITH all_week_num_cte AS(
@@ -121,7 +121,7 @@ ORDER BY all_week_number;
 ```
 ![w5 5 2](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/ee633002-b5aa-4012-a2c9-04acaebdc3ab)
 
-3. How many total transactions were there for each year in the dataset?
+#### 3. How many total transactions were there for each year in the dataset?
 ###### Answer:
 ```
 SELECT calendar_year, SUM(transactions) "total_txn"
@@ -131,7 +131,7 @@ ORDER BY total_txn DESC;
 ```
 ![w5 5 3](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/e1c20949-a614-4412-9cd9-08a238995389)
 
-4. What are the total sales for each region for each month?
+#### 4. What are the total sales for each region for each month?
 ###### Answer:
 ```
 SELECT region, month_number, SUM(sales) "total_sales"
@@ -141,8 +141,9 @@ ORDER BY region, month_number ASC;
 ```
 ![w5 5 4](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/4af3a1d1-ae23-4343-9fa9-092ff21a26a7)
 
-5. What is the total count of transactions for each platform
+#### 5. What is the total count of transactions for each platform?
 ###### Answer:
+Retail seems to dominate the number of transactions out of the two platforms.
 ```
 SELECT platform, SUM(transactions) "total_txn"
 FROM clean_weekly_sales
@@ -151,14 +152,62 @@ ORDER BY total_txn DESC;
 ```
 ![w5 5 5](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/242a441a-b250-416c-ad00-7a72082af864)
 
-6. What is the percentage of sales for Retail vs Shopify for each month?
+#### 6. What is the percentage of sales for Retail vs Shopify for each month?
 ###### Answer:
-   
-7. What is the percentage of sales by demographic for each year in the dataset?
-###### Answer:    
+```
+SELECT platform, month_number, SUM(sales) "monthly_sales_platform",
+	SUM(SUM(sales)) OVER (PARTITION BY month_number) "total_sales_monthly",
+	ROUND((SUM(sales)/SUM(SUM(sales)) OVER (PARTITION BY month_number))*100, 2) "sales_pct"
+FROM data_mart.clean_weekly_sales
+GROUP BY month_number, platform
+ORDER BY month_number, platform;
+```
+![w5 5 6](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/a51ecd28-01b6-45b7-9162-03b74febfec4)
 
-8. Which age_band and demographic values contribute the most to Retail sales?
+#### 7. What is the percentage of sales by demographic for each year in the dataset?
+###### Answer:    
+```
+SELECT demographic, SUM(sales) "sales_by_demo",
+	SUM(SUM(sales)) OVER(PARTITION BY demographic) "total_sales_by_demo",
+	ROUND((SUM(sales)/SUM(SUM(sales)) OVER())*100, 2) "sales_pct" 
+FROM data_mart.clean_weekly_sales
+GROUP BY demographic
+ORDER BY sales_pct DESC;
+```
+![w5 5 7](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/5375e8ce-877a-409e-903d-0566173f3a6e)
+
+#### 8. Which age_band and demographic values contribute the most to Retail sales?
 ###### Answer:
-    
-9. Can we use the avg_transaction column to find the average transaction size for each year for Retail vs Shopify? If not - how would you calculate it instead?
+It looks like we have a big group of unknown age band and demographic, but coming second is the retirees (in families or in couples) who contribute the most to Retail sales.
+```
+SELECT age_band, demographic, SUM(sales) "total_sales"
+FROM data_mart.clean_weekly_sales
+WHERE platform = 'Retail'
+GROUP BY age_band, demographic
+ORDER BY total_sales DESC;
+```
+![w5 5 8](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/dabced8a-d31c-4552-a60c-c5540ead4573)
+
+#### 9. Can we use the avg_transaction column to find the average transaction size for each year for Retail vs Shopify? If not - how would you calculate it instead?
 ###### Answer:
+
+When calculating the average transaction size for each year and platform, we need to consider the sum 
+of sales and the sum of transactions for each group (year and platform). Dividing the total sales 
+by the total transactions of each group will give us the average transaction size for that particular 
+group.
+
+Using AVG(sales/transactions) would calculate the average of the ratios of sales to transactions for 
+each individual record within the group, which is not what we want in this case. This approach would 
+give you a different result, as it would consider the average of averages instead of the overall average
+for the entire group.
+```
+SELECT calendar_year, platform, 
+		SUM(sales) "total_sales",
+		SUM(transactions) "total_txn",
+		ROUND(SUM(sales)/SUM(transactions),2) "avg_txn_size", ROUND(AVG(avg_transaction), 2) "wrong_avg"
+FROM data_mart.clean_weekly_sales
+GROUP BY calendar_year, platform
+ORDER BY calendar_year, platform;
+```
+![w5 5 9](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/c710f40c-7a9a-4466-837e-33750cadab48)
+
