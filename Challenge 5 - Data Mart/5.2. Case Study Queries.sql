@@ -112,14 +112,26 @@ GROUP BY age_band, demographic
 ORDER BY total_sales DESC;
 
 /*9. Can we use the avg_transaction column to find the average transaction size for each year for Retail vs 
-Shopify? If not - how would you calculate it instead?*/
+Shopify? If not - how would you calculate it instead?
+
+When calculating the average transaction size for each year and platform, we need to consider the sum 
+of sales and the sum of transactions for each group (year and platform). Dividing the total sales 
+by the total transactions of each group will give us the average transaction size for that particular 
+group.
+
+Using AVG(sales/transactions) would calculate the average of the ratios of sales to transactions for 
+each individual record within the group, which is not what we want in this case. This approach would 
+give you a different result, as it would consider the average of averages instead of the overall average
+for the entire group.*/
+
 SELECT calendar_year, platform, 
 		SUM(sales) "total_sales",
 		SUM(transactions) "total_txn",
-		ROUND(SUM(sales)/SUM(transactions),2) "avg_txn_size"
+		ROUND(SUM(sales)/SUM(transactions),2) "avg_txn_size", ROUND(AVG(avg_transaction), 2) "wrong_avg"
 FROM data_mart.clean_weekly_sales
 GROUP BY calendar_year, platform
 ORDER BY calendar_year, platform;
+
 
 /*C. Before & After Analysis
 This technique is usually used when we inspect an important event and want to inspect the impact before and 
