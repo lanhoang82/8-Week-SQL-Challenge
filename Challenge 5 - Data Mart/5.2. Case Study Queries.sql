@@ -145,12 +145,34 @@ previous week_date values would be before
 
 Using this analysis approach - answer the following questions:
 
-What is the total sales for the 4 weeks before and after 2020-06-15? What is the growth or reduction rate 
-in actual values and percentage of sales?
-What about the entire 12 weeks before and after?
-How do the sale metrics for these 2 periods before and after compare with the previous years in 2018 and 2019?
+1. What is the total sales for the 4 weeks before and after 2020-06-15? What is the growth or 
+reduction rate in actual values and percentage of sales?*/
+WITH cte_before_after AS(
+	SELECT DISTINCT week_number "change_week", 
+					week_number - 4 "four_weeks_before",
+					week_number + 4 "four_weeks_after"
+	FROM data_mart.clean_weekly_sales
+	WHERE week_date = '2020-06-15'
+)
 
-D. Bonus Question
+SELECT CASE 
+		WHEN week_number < cte_before_after.change_week AND week_number >= cte_before_after.four_weeks_before THEN 'Before'
+		WHEN week_number > cte_before_after.change_week AND week_number <= cte_before_after.four_weeks_after THEN 'After'
+		ELSE 'Not included'
+		END AS calc_period,
+		SUM(sales) AS total_sales
+FROM data_mart.clean_weekly_sales, cte_before_after
+GROUP BY calc_period;
+
+
+WHERE week_date = '2020-06-15'
+	AND week_number < cte_4_weeks_before.change_week AND week_number >= cte_4_weeks_before.four_weeks_before;
+
+/*2. What about the entire 12 weeks before and after?*/
+/*3. How do the sale metrics for these 2 periods before and after compare with the previous years in 
+2018 and 2019?*/
+
+/*D. Bonus Question
 
 1. Which areas of the business have the highest negative impact in sales metrics performance in 2020 for the 
 12 week before and after period?
