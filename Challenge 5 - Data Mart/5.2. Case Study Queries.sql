@@ -150,25 +150,63 @@ reduction rate in actual values and percentage of sales?*/
 WITH cte_before_after AS(
 	SELECT DISTINCT week_number "change_week", 
 					week_number - 4 "four_weeks_before",
-					week_number + 4 "four_weeks_after"
+					week_number + 3 "four_weeks_after"
 	FROM data_mart.clean_weekly_sales
 	WHERE week_date = '2020-06-15'
-)
-
-SELECT CASE 
+),
+total_sales_bef_aft AS(
+	SELECT CASE 
 		WHEN week_number < cte_before_after.change_week AND week_number >= cte_before_after.four_weeks_before THEN 'Before'
-		WHEN week_number > cte_before_after.change_week AND week_number <= cte_before_after.four_weeks_after THEN 'After'
+		WHEN week_number >= cte_before_after.change_week AND week_number <= cte_before_after.four_weeks_after THEN 'After'
 		ELSE 'Not included'
 		END AS calc_period,
 		SUM(sales) AS total_sales
-FROM data_mart.clean_weekly_sales, cte_before_after
-GROUP BY calc_period;
+	FROM data_mart.clean_weekly_sales, cte_before_after
+	GROUP BY calc_period
+)	
 
-
-WHERE week_date = '2020-06-15'
-	AND week_number < cte_4_weeks_before.change_week AND week_number >= cte_4_weeks_before.four_weeks_before;
+SELECT 
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') "after_sales",
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') "before_sales",
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') - 
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') "absolute_change",
+	 (CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') AS FLOAT) - 
+	  CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') AS FLOAT)) /
+		   	CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') AS FLOAT) * 100 
+		 "pct_change"; --casting as float because otherwise all figures are integer and wouldn't show percenter
+-- We see a reduction in sales after switching to sustainable packaging
 
 /*2. What about the entire 12 weeks before and after?*/
+
+WITH cte_before_after AS(
+	SELECT DISTINCT week_number "change_week", 
+					week_number - 12 "four_weeks_before",
+					week_number + 1 "four_weeks_after"
+	FROM data_mart.clean_weekly_sales
+	WHERE week_date = '2020-06-15'
+),
+total_sales_bef_aft AS(
+	SELECT CASE 
+		WHEN week_number < cte_before_after.change_week AND week_number >= cte_before_after.four_weeks_before THEN 'Before'
+		WHEN week_number >= cte_before_after.change_week AND week_number <= cte_before_after.four_weeks_after THEN 'After'
+		ELSE 'Not included'
+		END AS calc_period,
+		SUM(sales) AS total_sales
+	FROM data_mart.clean_weekly_sales, cte_before_after
+	GROUP BY calc_period
+)	
+
+SELECT 
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') "after_sales",
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') "before_sales",
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') - 
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') "absolute_change",
+	 (CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') AS FLOAT) -
+	  CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') AS FLOAT)) /
+		   	CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') AS FLOAT) * 100 
+		 "pct_change";
+-- We see an even bigger reduction in sales after switching to sustainable packaging
+
 /*3. How do the sale metrics for these 2 periods before and after compare with the previous years in 
 2018 and 2019?*/
 
