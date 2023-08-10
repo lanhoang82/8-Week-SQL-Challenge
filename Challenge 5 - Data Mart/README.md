@@ -211,3 +211,83 @@ ORDER BY calendar_year, platform;
 ```
 ![w5 5 9](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/c710f40c-7a9a-4466-837e-33750cadab48)
 
+### C. Before & After Analysis
+
+This technique is usually used when we inspect an important event and want to inspect the impact before and after a certain point in time. Taking the week_date value of 2020-06-15 as the baseline week where the Data Mart sustainable packaging changes came into effect.
+
+We would include all week_date values for 2020-06-15 as the start of the period after the change and the previous week_date values would be before. Using this analysis approach - answer the following questions:
+
+#### 1. What is the total sales for the 4 weeks before and after 2020-06-15? What is the growth or reduction rate in actual values and percentage of sales?*/
+
+###### Answer: 
+We see a 30% reduction in sales 4 weeks after the change, compared to the 4 weeks before the change to sustainable packaging.
+
+```
+WITH cte_before_after AS(
+	SELECT DISTINCT week_number "change_week", 
+					week_number - 4 "four_weeks_before",
+					week_number + 3 "four_weeks_after"
+	FROM data_mart.clean_weekly_sales
+	WHERE week_date = '2020-06-15'
+),
+total_sales_bef_aft AS(
+	SELECT CASE 
+		WHEN week_number < cte_before_after.change_week AND week_number >= cte_before_after.four_weeks_before THEN 'Before'
+		WHEN week_number >= cte_before_after.change_week AND week_number <= cte_before_after.four_weeks_after THEN 'After'
+		ELSE 'Not included'
+		END AS calc_period,
+		SUM(sales) AS total_sales
+	FROM data_mart.clean_weekly_sales, cte_before_after
+	GROUP BY calc_period
+)	
+
+SELECT 
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') "after_sales",
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') "before_sales",
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') - 
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') "absolute_change",
+	 (CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') AS FLOAT) - 
+	  CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') AS FLOAT)) /
+		   	CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') AS FLOAT) * 100 
+		 "pct_change"; --casting as float because otherwise all figures are integer and wouldn't show percenter
+```
+
+![w5 b 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/24da7020-3d69-43d9-bd4e-5706959d0a79)
+
+#### 2. What about the entire 12 weeks before and after?
+
+###### Answer: 
+We see an even bigger reduction in sales 12 weeks after the change, compared to the 12 weeks before the change to sustainable packaging.
+
+```
+WITH cte_before_after AS(
+	SELECT DISTINCT week_number "change_week", 
+					week_number - 12 "four_weeks_before",
+					week_number + 1 "four_weeks_after"
+	FROM data_mart.clean_weekly_sales
+	WHERE week_date = '2020-06-15'
+),
+total_sales_bef_aft AS(
+	SELECT CASE 
+		WHEN week_number < cte_before_after.change_week AND week_number >= cte_before_after.four_weeks_before THEN 'Before'
+		WHEN week_number >= cte_before_after.change_week AND week_number <= cte_before_after.four_weeks_after THEN 'After'
+		ELSE 'Not included'
+		END AS calc_period,
+		SUM(sales) AS total_sales
+	FROM data_mart.clean_weekly_sales, cte_before_after
+	GROUP BY calc_period
+)	
+
+SELECT 
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') "after_sales",
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') "before_sales",
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') - 
+	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') "absolute_change",
+	 (CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') AS FLOAT) -
+	  CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') AS FLOAT)) /
+		   	CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') AS FLOAT) * 100 
+		 "pct_change";
+```
+![w5 b 2](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/57fc756e-a360-4ac8-8810-2969ffbe7364)
+
+
