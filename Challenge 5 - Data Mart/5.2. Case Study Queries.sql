@@ -180,15 +180,15 @@ SELECT
 
 WITH cte_before_after AS(
 	SELECT DISTINCT week_number "change_week", 
-					week_number - 12 "four_weeks_before",
-					week_number + 1 "four_weeks_after"
+					week_number - 12 "twelve_weeks_before",
+					week_number + 11 "twelve_weeks_after"
 	FROM data_mart.clean_weekly_sales
 	WHERE week_date = '2020-06-15'
 ),
 total_sales_bef_aft AS(
 	SELECT CASE 
-		WHEN week_number < cte_before_after.change_week AND week_number >= cte_before_after.four_weeks_before THEN 'Before'
-		WHEN week_number >= cte_before_after.change_week AND week_number <= cte_before_after.four_weeks_after THEN 'After'
+		WHEN week_number < cte_before_after.change_week AND week_number >= cte_before_after.twelve_weeks_before THEN 'Before'
+		WHEN week_number >= cte_before_after.change_week AND week_number <= cte_before_after.twelve_weeks_after THEN 'After'
 		ELSE 'Not included'
 		END AS calc_period,
 		SUM(sales) AS total_sales
@@ -213,13 +213,198 @@ SELECT
 /*D. Bonus Question
 
 1. Which areas of the business have the highest negative impact in sales metrics performance in 2020 for the 
-12 week before and after period?
+12 week before and after period?*/
 
-a. region
-b. platform
-c. age_band
-d. demographic
-e. customer_type
+CREATE EXTENSION IF NOT EXISTS tablefunc; -- extension for table pivoting
 
-2. Do you have any further recommendations for Danny’s team at Data Mart or any interesting insights based 
+/*a. region*/
+WITH region_sales AS(
+	SELECT * FROM CROSSTAB($$ --performing table pivot 
+		WITH cte_before_after AS (
+			SELECT DISTINCT
+				week_number AS change_week,
+				week_number - 12 AS twelve_weeks_before,
+				week_number + 11 AS twelve_weeks_after
+			FROM
+				data_mart.clean_weekly_sales
+			WHERE
+				week_date = '2020-06-15'
+		)
+		SELECT
+			region,
+			CASE 
+				WHEN week_number < cte.change_week AND week_number >= cte.twelve_weeks_before THEN 'before_sales'
+				WHEN week_number >= cte.change_week AND week_number <= cte.twelve_weeks_after THEN 'after_sales'
+				ELSE 'Not included'
+			END AS calc_period,
+			SUM(sales)::NUMERIC AS total_sales
+		FROM
+			data_mart.clean_weekly_sales,
+			cte_before_after cte
+		GROUP BY
+			region, calc_period
+		ORDER BY
+			region, calc_period
+	$$) AS ct (Region VARCHAR, "before_sales" NUMERIC, "after_sales" NUMERIC, "Not included" NUMERIC)
+	ORDER BY Region ASC
+)
+SELECT region, before_sales, after_sales, after_sales - before_sales "absolute_change", 
+		ROUND((after_sales - before_sales) / before_sales * 100, 2) "pct_change"
+FROM region_sales
+ORDER BY pct_change ASC;
+
+-- Europe and Africa are the two regions hardest hit by the change. 
+
+/*b. platform*/
+
+WITH platform_sales AS(
+	SELECT * FROM CROSSTAB($$ --performing table pivot 
+		WITH cte_before_after AS (
+			SELECT DISTINCT
+				week_number AS change_week,
+				week_number - 12 AS twelve_weeks_before,
+				week_number + 11 AS twelve_weeks_after
+			FROM
+				data_mart.clean_weekly_sales
+			WHERE
+				week_date = '2020-06-15'
+		)
+		SELECT
+			platform,
+			CASE 
+				WHEN week_number < cte.change_week AND week_number >= cte.twelve_weeks_before THEN 'before_sales'
+				WHEN week_number >= cte.change_week AND week_number <= cte.twelve_weeks_after THEN 'after_sales'
+				ELSE 'Not included'
+			END AS calc_period,
+			SUM(sales)::NUMERIC AS total_sales
+		FROM
+			data_mart.clean_weekly_sales,
+			cte_before_after cte
+		GROUP BY
+			platform, calc_period
+		ORDER BY
+			platform, calc_period
+	$$) AS ct (platform VARCHAR, "before_sales" NUMERIC, "after_sales" NUMERIC, "Not included" NUMERIC)
+	ORDER BY platform ASC
+)
+SELECT platform, before_sales, after_sales, after_sales - before_sales "absolute_change", 
+		ROUND((after_sales - before_sales) / before_sales * 100, 2) "pct_change"
+FROM platform_sales
+ORDER BY pct_change ASC;
+
+/*c. age_band*/
+
+WITH age_band_sales AS(
+	SELECT * FROM CROSSTAB($$ --performing table pivot 
+		WITH cte_before_after AS (
+			SELECT DISTINCT
+				week_number AS change_week,
+				week_number - 12 AS twelve_weeks_before,
+				week_number + 11 AS twelve_weeks_after
+			FROM
+				data_mart.clean_weekly_sales
+			WHERE
+				week_date = '2020-06-15'
+		)
+		SELECT
+			age_band,
+			CASE 
+				WHEN week_number < cte.change_week AND week_number >= cte.twelve_weeks_before THEN 'before_sales'
+				WHEN week_number >= cte.change_week AND week_number <= cte.twelve_weeks_after THEN 'after_sales'
+				ELSE 'Not included'
+			END AS calc_period,
+			SUM(sales)::NUMERIC AS total_sales
+		FROM
+			data_mart.clean_weekly_sales,
+			cte_before_after cte
+		GROUP BY
+			age_band, calc_period
+		ORDER BY
+			age_band, calc_period
+	$$) AS ct (age_band TEXT, "before_sales" NUMERIC, "after_sales" NUMERIC, "Not included" NUMERIC)
+	ORDER BY age_band ASC
+)
+SELECT age_band, before_sales, after_sales, after_sales - before_sales "absolute_change", 
+		ROUND((after_sales - before_sales) / before_sales * 100, 2) "pct_change"
+FROM age_band_sales
+ORDER BY pct_change ASC;
+
+-- Retirees are the ones with the least positive increase after the change.
+
+/*d. demographic*/ -- text
+
+WITH demographic_sales AS(
+	SELECT * FROM CROSSTAB($$ --performing table pivot 
+		WITH cte_before_after AS (
+			SELECT DISTINCT
+				week_number AS change_week,
+				week_number - 12 AS twelve_weeks_before,
+				week_number + 11 AS twelve_weeks_after
+			FROM
+				data_mart.clean_weekly_sales
+			WHERE
+				week_date = '2020-06-15'
+		)
+		SELECT
+			demographic,
+			CASE 
+				WHEN week_number < cte.change_week AND week_number >= cte.twelve_weeks_before THEN 'before_sales'
+				WHEN week_number >= cte.change_week AND week_number <= cte.twelve_weeks_after THEN 'after_sales'
+				ELSE 'Not included'
+			END AS calc_period,
+			SUM(sales)::NUMERIC AS total_sales
+		FROM
+			data_mart.clean_weekly_sales,
+			cte_before_after cte
+		GROUP BY
+			demographic, calc_period
+		ORDER BY
+			demographic, calc_period
+	$$) AS ct (demographic TEXT, "before_sales" NUMERIC, "after_sales" NUMERIC, "Not included" NUMERIC)
+	ORDER BY demographic ASC
+)
+SELECT demographic, before_sales, after_sales, after_sales - before_sales "absolute_change", 
+		ROUND((after_sales - before_sales) / before_sales * 100, 2) "pct_change"
+FROM demographic_sales
+ORDER BY pct_change ASC;
+
+/*e. customer_type*/ -- varchar
+
+WITH customer_type_sales AS(
+	SELECT * FROM CROSSTAB($$ --performing table pivot 
+		WITH cte_before_after AS (
+			SELECT DISTINCT
+				week_number AS change_week,
+				week_number - 12 AS twelve_weeks_before,
+				week_number + 11 AS twelve_weeks_after
+			FROM
+				data_mart.clean_weekly_sales
+			WHERE
+				week_date = '2020-06-15'
+		)
+		SELECT
+			customer_type,
+			CASE 
+				WHEN week_number < cte.change_week AND week_number >= cte.twelve_weeks_before THEN 'before_sales'
+				WHEN week_number >= cte.change_week AND week_number <= cte.twelve_weeks_after THEN 'after_sales'
+				ELSE 'Not included'
+			END AS calc_period,
+			SUM(sales)::NUMERIC AS total_sales
+		FROM
+			data_mart.clean_weekly_sales,
+			cte_before_after cte
+		GROUP BY
+			customer_type, calc_period
+		ORDER BY
+			customer_type, calc_period
+	$$) AS ct (customer_type VARCHAR, "before_sales" NUMERIC, "after_sales" NUMERIC, "Not included" NUMERIC)
+	ORDER BY customer_type ASC
+)
+SELECT customer_type, before_sales, after_sales, after_sales - before_sales "absolute_change", 
+		ROUND((after_sales - before_sales) / before_sales * 100, 2) "pct_change"
+FROM customer_type_sales
+ORDER BY pct_change ASC;
+-- New customers are the customer type that incurs the negative impact in sales after the change.
+
+/*2. Do you have any further recommendations for Danny’s team at Data Mart or any interesting insights based 
 off this analysis?*/
