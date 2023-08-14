@@ -160,7 +160,7 @@ total_sales_bef_aft AS(
 		WHEN week_number >= cte_before_after.change_week AND week_number <= cte_before_after.four_weeks_after THEN 'After'
 		ELSE 'Not included'
 		END AS calc_period,
-		SUM(sales) AS total_sales
+		SUM(sales)::NUMERIC AS total_sales
 	FROM data_mart.clean_weekly_sales, cte_before_after
 	GROUP BY calc_period
 )	
@@ -170,10 +170,10 @@ SELECT
 	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') "before_sales",
 	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') - 
 	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') "absolute_change",
-	 (CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') AS FLOAT) - 
-	  CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') AS FLOAT)) /
-		   	CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') AS FLOAT) * 100 
-		 "pct_change"; --casting as float because otherwise all figures are integer and wouldn't show percenter
+	 ROUND(((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After')  -
+	 (SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before')) /
+		   	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before')  * 100 , 2) 
+		 "pct_change"; 
 -- We see a reduction in sales after switching to sustainable packaging
 
 /*2. What about the entire 12 weeks before and after?*/
@@ -191,7 +191,7 @@ total_sales_bef_aft AS(
 		WHEN week_number >= cte_before_after.change_week AND week_number <= cte_before_after.twelve_weeks_after THEN 'After'
 		ELSE 'Not included'
 		END AS calc_period,
-		SUM(sales) AS total_sales
+		SUM(sales)::NUMERIC AS total_sales
 	FROM data_mart.clean_weekly_sales, cte_before_after
 	GROUP BY calc_period
 )	
@@ -201,9 +201,9 @@ SELECT
 	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') "before_sales",
 	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') - 
 	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') "absolute_change",
-	 (CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After') AS FLOAT) -
-	  CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') AS FLOAT)) /
-		   	CAST((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before') AS FLOAT) * 100 
+	 ROUND(((SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'After')  -
+	 (SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before')) /
+		   	(SELECT total_sales FROM total_sales_bef_aft WHERE calc_period = 'Before')  * 100 , 2)
 		 "pct_change";
 -- We see an even bigger reduction in sales after switching to sustainable packaging
 
@@ -264,26 +264,20 @@ WITH platform_sales AS(
 				week_number AS change_week,
 				week_number - 12 AS twelve_weeks_before,
 				week_number + 11 AS twelve_weeks_after
-			FROM
-				data_mart.clean_weekly_sales
-			WHERE
-				week_date = '2020-06-15'
+			FROM data_mart.clean_weekly_sales
+			WHERE week_date = '2020-06-15'
 		)
-		SELECT
-			platform,
+		SELECT platform,
 			CASE 
 				WHEN week_number < cte.change_week AND week_number >= cte.twelve_weeks_before THEN 'before_sales'
 				WHEN week_number >= cte.change_week AND week_number <= cte.twelve_weeks_after THEN 'after_sales'
 				ELSE 'Not included'
 			END AS calc_period,
 			SUM(sales)::NUMERIC AS total_sales
-		FROM
-			data_mart.clean_weekly_sales,
+		FROM data_mart.clean_weekly_sales,
 			cte_before_after cte
-		GROUP BY
-			platform, calc_period
-		ORDER BY
-			platform, calc_period
+		GROUP BY platform, calc_period
+		ORDER BY platform, calc_period
 	$$) AS ct (platform VARCHAR, "before_sales" NUMERIC, "after_sales" NUMERIC, "Not included" NUMERIC)
 	ORDER BY platform ASC
 )
