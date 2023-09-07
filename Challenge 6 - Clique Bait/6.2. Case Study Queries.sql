@@ -5,12 +5,17 @@ SELECT * FROM clique_bait.events;
 
 /*1. How many users are there?*/
 
-SELECT COUNT(DISTINCT user_id) FROM clique_bait.users;
+SELECT COUNT(DISTINCT user_id) "num_users"
+FROM clique_bait.users;
 
 /*2. How many cookies does each user have on average?*/
-SELECT user_id, COUNT(DISTINCT cookie_id) "num_cookie"
-FROM clique_bait.users
-GROUP BY user_id;
+WITH cookie_per_user_cte AS (
+	SELECT user_id, COUNT(DISTINCT cookie_id) "num_cookie"
+	FROM clique_bait.users
+	GROUP BY user_id
+)
+SELECT ROUND(AVG(num_cookie),2) "avg_cookie_per_user"
+FROM cookie_per_user_cte;
 
 /*3. What is the unique number of visits by all users per month?*/
 
@@ -22,8 +27,24 @@ WITH event_by_month_cte AS (
 SELECT event_month, COUNT(DISTINCT visit_id) "unique_visit"
 FROM event_by_month_cte
 GROUP BY event_month;
+
 /*4. What is the number of events for each event type?*/
+SELECT clique_bait.event_identifier.event_name, COUNT(visit_id) "num_events"
+FROM clique_bait.events
+LEFT JOIN clique_bait.event_identifier
+ON clique_bait.events.event_type = clique_bait.event_identifier.event_type
+GROUP BY clique_bait.event_identifier.event_name;
+
 /*5. What is the percentage of visits which have a purchase event?*/
+
+SELECT clique_bait.event_identifier.event_name, 
+		ROUND((COUNT(visit_id)::numeric / (SELECT COUNT(visit_id) FROM clique_bait.events)::numeric) * 100, 2) "pct_events"
+FROM clique_bait.events
+LEFT JOIN clique_bait.event_identifier
+ON clique_bait.events.event_type = clique_bait.event_identifier.event_type
+WHERE clique_bait.event_identifier.event_name = 'Purchase'
+GROUP BY clique_bait.event_identifier.event_name;
+
 /*6. What is the percentage of visits which view the checkout page but do not have a purchase event?*/
 /*7. What are the top 3 pages by number of views?*/
 /*8. What is the number of views and cart adds for each product category?*/
