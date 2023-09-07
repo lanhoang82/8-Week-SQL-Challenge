@@ -31,10 +31,64 @@ Some further details about the dataset:
 Using the available datasets - answer the following questions using a single query for each one:
 
 1. How many users are there?
+###### Answer:
+```
+SELECT COUNT(DISTINCT user_id) "num_users"
+FROM clique_bait.users;
+```
+![6 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/462db508-0cf6-4e30-a1a4-d826d5084671)
+
 2. How many cookies does each user have on average?
+###### Answer:
+```
+WITH cookie_per_user_cte AS (
+	SELECT user_id, COUNT(DISTINCT cookie_id) "num_cookie"
+	FROM clique_bait.users
+	GROUP BY user_id
+)
+SELECT ROUND(AVG(num_cookie),2) "avg_cookie_per_user"
+FROM cookie_per_user_cte;
+```
+![6 2](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/646283f0-3b79-4880-8e25-6a1659a9c238)
+
 3. What is the unique number of visits by all users per month?
+###### Answer:
+```
+WITH event_by_month_cte AS (
+	SELECT visit_id, 
+	EXTRACT('MONTH' FROM event_time) "event_month"
+	FROM clique_bait.events
+)
+SELECT event_month, COUNT(DISTINCT visit_id) "unique_visit"
+FROM event_by_month_cte
+GROUP BY event_month;
+```
+![6 3](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/46ca6b29-50a4-4118-95fe-6a7f62b393ec)
+
 4. What is the number of events for each event type?
+###### Answer:
+```
+SELECT clique_bait.event_identifier.event_name, COUNT(visit_id) "num_events"
+FROM clique_bait.events
+LEFT JOIN clique_bait.event_identifier
+ON clique_bait.events.event_type = clique_bait.event_identifier.event_type
+GROUP BY clique_bait.event_identifier.event_name;
+```
+![6 4](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/421bf44c-9576-4d8b-afd6-2b1e04fb5f7f)
+
 5. What is the percentage of visits which have a purchase event?
+###### Answer:
+```
+SELECT clique_bait.event_identifier.event_name, 
+		ROUND((COUNT(visit_id)::numeric / (SELECT COUNT(visit_id) FROM clique_bait.events)::numeric) * 100, 2) "pct_events"
+FROM clique_bait.events
+LEFT JOIN clique_bait.event_identifier
+ON clique_bait.events.event_type = clique_bait.event_identifier.event_type
+WHERE clique_bait.event_identifier.event_name = 'Purchase'
+GROUP BY clique_bait.event_identifier.event_name;
+```
+![6 5](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/36746163-f20f-4889-8cb1-5b47d11f82d0)
+
 6. What is the percentage of visits which view the checkout page but do not have a purchase event?
 7. What are the top 3 pages by number of views?
 8. What is the number of views and cart adds for each product category?
