@@ -46,9 +46,44 @@ WHERE clique_bait.event_identifier.event_name = 'Purchase'
 GROUP BY clique_bait.event_identifier.event_name;
 
 /*6. What is the percentage of visits which view the checkout page but do not have a purchase event?*/
+SELECT 
+	ROUND((COUNT(*)::numeric/ (SELECT COUNT(*) FROM clique_bait.events)::numeric) * 100, 2) "pct_no_purchase"
+FROM clique_bait.events
+LEFT JOIN clique_bait.event_identifier
+	ON clique_bait.events.event_type = clique_bait.event_identifier.event_type
+LEFT JOIN clique_bait.page_hierarchy
+	ON clique_bait.events.page_id = clique_bait.page_hierarchy.page_id
+WHERE clique_bait.page_hierarchy.page_name = 'Checkout' 
+	AND clique_bait.event_identifier.event_name <> 'Purchase';
+
 /*7. What are the top 3 pages by number of views?*/
+SELECT 
+	clique_bait.page_hierarchy.page_name, COUNT(*) "page_view_count"
+FROM clique_bait.events
+LEFT JOIN clique_bait.event_identifier
+	ON clique_bait.events.event_type = clique_bait.event_identifier.event_type
+LEFT JOIN clique_bait.page_hierarchy
+	ON clique_bait.events.page_id = clique_bait.page_hierarchy.page_id
+GROUP BY clique_bait.page_hierarchy.page_name
+ORDER BY "page_view_count" DESC
+LIMIT 3;
+	
 /*8. What is the number of views and cart adds for each product category?*/
+SELECT  clique_bait.page_hierarchy.product_category, 
+		clique_bait.event_identifier.event_name, 
+		COUNT(*) "event_count"
+FROM clique_bait.events
+LEFT JOIN clique_bait.event_identifier
+	ON clique_bait.events.event_type = clique_bait.event_identifier.event_type
+LEFT JOIN clique_bait.page_hierarchy
+	ON clique_bait.events.page_id = clique_bait.page_hierarchy.page_id
+WHERE clique_bait.event_identifier.event_name IN ('Page View', 'Add to Cart')
+GROUP BY clique_bait.page_hierarchy.product_category, clique_bait.event_identifier.event_name
+ORDER BY clique_bait.page_hierarchy.product_category DESC, 
+		event_count DESC;
+
 /*9. What are the top 3 products by purchases?*/
+
 
 /*3. Product Funnel Analysis
 Using a single SQL query - create a new output table which has the following details:*/
