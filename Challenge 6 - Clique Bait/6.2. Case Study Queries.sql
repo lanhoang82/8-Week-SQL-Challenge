@@ -84,6 +84,31 @@ ORDER BY clique_bait.page_hierarchy.product_category DESC,
 
 /*9. What are the top 3 products by purchases?*/
 
+WITH purchase_visit_cte AS (--create cte with unique visit_id that ends in Purchase
+	SELECT DISTINCT visit_id, MAX(sequence_number) "final_event", event_name
+	FROM clique_bait.events
+	LEFT JOIN clique_bait.event_identifier
+		ON clique_bait.events.event_type = clique_bait.event_identifier.event_type
+	WHERE event_name = 'Purchase'
+	GROUP BY visit_id, event_name
+),
+purchased_product_cte AS (--create cte with products added to cart that ends in purchase
+	SELECT clique_bait.events.visit_id, page_name, product_category, sequence_number, clique_bait.event_identifier.event_name
+	FROM clique_bait.events
+	INNER JOIN purchase_visit_cte
+		ON purchase_visit_cte.visit_id = clique_bait.events.visit_id
+	LEFT JOIN clique_bait.event_identifier
+		ON clique_bait.events.event_type = clique_bait.event_identifier.event_type
+	LEFT JOIN clique_bait.page_hierarchy
+		ON clique_bait.events.page_id = clique_bait.page_hierarchy.page_id
+	WHERE clique_bait.event_identifier.event_name = 'Add to Cart'
+)
+SELECT page_name "purchased_product", COUNT(*) "product_count"
+FROM purchased_product_cte
+GROUP BY page_name
+ORDER BY product_count DESC
+LIMIT 3;
+
 
 /*3. Product Funnel Analysis
 Using a single SQL query - create a new output table which has the following details:*/
