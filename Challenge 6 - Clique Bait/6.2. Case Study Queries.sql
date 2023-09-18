@@ -256,7 +256,7 @@ SELECT
 	ROUND(AVG((add_cart_purchased_count::numeric/add_cart_count::numeric)*100),2) "avg_cart_2_purchase"
 FROM funnel_analysis
 
-/*3. Campaigns Analysis
+/*4. Campaigns Analysis
 Generate a table that has 1 single row for every unique visit_id record and has the following columns:*/
 
 /*- user_id*/
