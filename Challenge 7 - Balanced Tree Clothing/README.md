@@ -28,15 +28,60 @@ Each question can be answered using a single query - but as you are writing the 
 
 1. What was the total quantity sold for all products?
 
+```
+SELECT SUM(qty) "total_qty_sold"
+FROM balanced_tree.sales;
+```
+###### Answer:
+![7 a 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/0f214dd2-6fa3-47dc-882a-e0e534dff88f)
+
+
 2. What is the total generated revenue for all products before discounts?
 
+```
+SELECT SUM(qty*price) "total_rev_full"
+FROM balanced_tree.sales;
+```
+###### Answer:
+![7 a 2](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/ee7f87df-f9f3-45f5-b253-0793a9153007)
+
+
 3. What was the total discount amount for all products?
+
+```
+SELECT SUM((discount::numeric / 100) * price * qty)::integer "total_disc_amt"
+FROM balanced_tree.sales;
+```
+###### Answer:
+![7 a 3](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/fea8a7cb-d04f-446f-ae5b-b6f900aec966)
+
 
 ### B. Transaction Analysis
 
 1. How many unique transactions were there?
 
+```
+SELECT COUNT(DISTINCT txn_id) "unique_txt_count"
+FROM balanced_tree.sales;
+```
+###### Answer:
+![7 b 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/c2f22562-a081-44a7-b088-147c8eac1b1b)
+
+
 2. What is the average unique products purchased in each transaction?
+
+```
+WITH unique_prod_per_txn_cte AS (
+	SELECT txn_id, COUNT(DISTINCT prod_id) "unique_prod_count"
+	FROM balanced_tree.sales
+	GROUP BY txn_id
+)
+SELECT AVG(unique_prod_count)::integer "avg_unique_prod"
+FROM unique_prod_per_txn_cte;
+```
+###### Answer:
+![7 b 2](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/0010376f-1a0d-463f-8a07-34dcee5af66b)
+
 
 3. What are the 25th, 50th and 75th percentile values for the revenue per transaction?
 
