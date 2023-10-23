@@ -13,6 +13,7 @@ Balanced Tree Clothing Company prides themselves on providing an optimised range
 Danny, the CEO of this trendy fashion company has asked you to assist the team’s merchandising teams analyse their sales performance and generate a basic financial report to share with the wider business.
 
 ## Entity Relationship Diagram
+![W7 Entity Relationship Diagram](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/6d4bb87b-715b-48b4-85ad-ba3f7be452b4)
 
 
 For this case study there is a total of 4 datasets for this case study - however I will only need to utilise 2 main tables to solve all of the regular questions, and the additional 2 tables are used only for the bonus challenge question!
