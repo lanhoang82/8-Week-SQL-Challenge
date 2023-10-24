@@ -8,18 +8,71 @@ which the Balanced Tree team can run each month.*/
 
 -- A. High Level Sales Analysis
 /*1. What was the total quantity sold for all products?*/
+SELECT SUM(qty) "total_qty_sold"
+FROM balanced_tree.sales;
 
 /*2. What is the total generated revenue for all products before discounts?*/
+SELECT SUM(qty*price) "total_rev_full"
+FROM balanced_tree.sales;
+
 /*3. What was the total discount amount for all products?*/
+SELECT SUM((discount::numeric / 100) * price * qty)::integer "total_disc_amt"
+FROM balanced_tree.sales;
+
 
 -- B. Transaction Analysis
 /*1. How many unique transactions were there?*/
-/*2. What is the average unique products purchased in each transaction?*/
-/*3. What are the 25th, 50th and 75th percentile values for the revenue per transaction?*/
-/*4. What is the average discount value per transaction?*/
-/*5. What is the percentage split of all transactions for members vs non-members?*/
-/*6. What is the average revenue for member transactions and non-member transactions?*/
+SELECT COUNT(DISTINCT txn_id) "unique_txt_count"
+FROM balanced_tree.sales;
 
+/*2. What is the average unique products purchased in each transaction?*/
+WITH unique_prod_per_txn_cte AS (
+	SELECT txn_id, COUNT(DISTINCT prod_id) "unique_prod_count"
+	FROM balanced_tree.sales
+	GROUP BY txn_id
+)
+SELECT AVG(unique_prod_count)::integer "avg_unique_prod"
+FROM unique_prod_per_txn_cte;
+
+/*3. What are the 25th, 50th and 75th percentile values for the revenue per transaction?*/
+WITH rev_per_txn_cte AS (
+	SELECT txn_id, SUM(qty*price) "rev_per_txn"
+	FROM balanced_tree.sales
+	GROUP BY txn_id
+	ORDER BY rev_per_txn DESC
+)
+SELECT 
+	PERCENTILE_DISC(0.25) WITHIN GROUP (ORDER BY rev_per_txn) "25th_percentile",
+	PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY rev_per_txn) "50th_percentile",
+	PERCENTILE_DISC(0.75) WITHIN GROUP (ORDER BY rev_per_txn) "75th_percentile"
+	-- analytic function that is used to sort the percentile of the specific values for discrete distribution
+FROM rev_per_txn_cte;
+
+/*4. What is the average discount value per transaction?*/
+WITH disc_per_txn_cte AS (
+	SELECT SUM(qty*price* (discount::numeric / 100)) "disc_per_txn"
+	FROM balanced_tree.sales
+	GROUP BY txn_id
+)
+SELECT ROUND(AVG(disc_per_txn), 2) "avg_disc_per_txn"
+FROM disc_per_txn_cte;
+
+/*5. What is the percentage split of all transactions for members vs non-members?*/
+SELECT member, COUNT(*), 
+		ROUND((COUNT(*)::numeric/(SELECT COUNT(member)::numeric FROM balanced_tree.sales)), 2) "pct_member"
+FROM balanced_tree.sales
+GROUP BY member
+
+/*6. What is the average revenue for member transactions and non-member transactions?*/
+WITH sum_rev_mem_cte AS (
+	SELECT member, txn_id, SUM(qty*price) "sum_rev"
+	FROM balanced_tree.sales
+	GROUP BY member, txn_id
+	ORDER BY member
+)
+SELECT member, ROUND(AVG(sum_rev), 2) "avg_rev"
+FROM sum_rev_mem_cte
+GROUP BY member;
 -- C. Product Analysis
 /*1. What are the top 3 products by total revenue before discount?*/
 /*2. What is the total quantity, revenue and discount for each segment?*/
