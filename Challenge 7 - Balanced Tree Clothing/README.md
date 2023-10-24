@@ -85,11 +85,63 @@ FROM unique_prod_per_txn_cte;
 
 3. What are the 25th, 50th and 75th percentile values for the revenue per transaction?
 
+```
+WITH rev_per_txn_cte AS (
+	SELECT txn_id, SUM(qty*price) "rev_per_txn"
+	FROM balanced_tree.sales
+	GROUP BY txn_id
+	ORDER BY rev_per_txn DESC
+)
+SELECT 
+	PERCENTILE_DISC(0.25) WITHIN GROUP (ORDER BY rev_per_txn) "25th_percentile",
+	PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY rev_per_txn) "50th_percentile",
+	PERCENTILE_DISC(0.75) WITHIN GROUP (ORDER BY rev_per_txn) "75th_percentile"
+	-- analytic function that is used to sort the percentile of the specific values for discrete distribution
+FROM rev_per_txn_cte;
+```
+###### Answer:
+![7 b 3](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/5ae1e63f-c692-4966-8c4c-ad30460c8cea)
+
 4. What is the average discount value per transaction?
+
+```
+WITH disc_per_txn_cte AS (
+	SELECT SUM(qty*price* (discount::numeric / 100)) "disc_per_txn"
+	FROM balanced_tree.sales
+	GROUP BY txn_id
+)
+SELECT ROUND(AVG(disc_per_txn), 2) "avg_disc_per_txn"
+FROM disc_per_txn_cte;
+```
+###### Answer:
+![Untitled7 b 4](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/9cb3dae1-f351-4e81-b8c7-b0e622c3eecf)
 
 5. What is the percentage split of all transactions for members vs non-members?
 
+```
+SELECT member, COUNT(*), 
+		ROUND((COUNT(*)::numeric/(SELECT COUNT(member)::numeric FROM balanced_tree.sales)), 2) "pct_member"
+FROM balanced_tree.sales
+GROUP BY member
+```
+###### Answer:
+![7 b 5](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/5020d4a7-e210-46f4-9af4-cc7dd84367df)
+
 6. What is the average revenue for member transactions and non-member transactions?
+
+```
+WITH sum_rev_mem_cte AS (
+	SELECT member, txn_id, SUM(qty*price) "sum_rev"
+	FROM balanced_tree.sales
+	GROUP BY member, txn_id
+	ORDER BY member
+)
+SELECT member, ROUND(AVG(sum_rev), 2) "avg_rev"
+FROM sum_rev_mem_cte
+GROUP BY member;
+```
+###### Answer:
+![7 b 6](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/dc5c63a0-0c2f-4e0c-8144-a6877225e0f2)
 
 
 ### C. Product Analysis
