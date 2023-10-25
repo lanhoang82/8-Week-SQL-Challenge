@@ -73,9 +73,32 @@ WITH sum_rev_mem_cte AS (
 SELECT member, ROUND(AVG(sum_rev), 2) "avg_rev"
 FROM sum_rev_mem_cte
 GROUP BY member;
+
 -- C. Product Analysis
 /*1. What are the top 3 products by total revenue before discount?*/
+
+SELECT prod_id, product_name, SUM(qty*s.price) "total_rev"
+
+FROM balanced_tree.sales AS s
+LEFT JOIN balanced_tree.product_details AS pd
+ON s.prod_id = pd.product_id
+GROUP BY prod_id, product_name
+ORDER BY total_rev DESC
+LIMIT 3;
+
 /*2. What is the total quantity, revenue and discount for each segment?*/
+
+SELECT segment_name, 
+		SUM(qty) "total_qty",
+		SUM(qty*s.price) "total_rev",
+		ROUND(SUM(qty*s.price* (discount::numeric/100 )), 2)  "total_discount"
+
+FROM balanced_tree.sales AS s
+LEFT JOIN balanced_tree.product_details AS pd
+ON s.prod_id = pd.product_id
+GROUP BY segment_name
+ORDER BY segment_name ASC;
+
 /*3. What is the top selling product for each segment?*/
 /*4. What is the total quantity, revenue and discount for each category?*/
 /*5. What is the top selling product for each category?*/
