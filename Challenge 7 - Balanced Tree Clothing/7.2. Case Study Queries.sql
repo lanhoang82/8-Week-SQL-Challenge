@@ -78,7 +78,6 @@ GROUP BY member;
 /*1. What are the top 3 products by total revenue before discount?*/
 
 SELECT prod_id, product_name, SUM(qty*s.price) "total_rev"
-
 FROM balanced_tree.sales AS s
 LEFT JOIN balanced_tree.product_details AS pd
 ON s.prod_id = pd.product_id
@@ -100,6 +99,27 @@ GROUP BY segment_name
 ORDER BY segment_name ASC;
 
 /*3. What is the top selling product for each segment?*/
+WITH rank_top_sales_cte AS (
+	SELECT segment_name, product_name,
+		SUM(qty) "total_qty",
+		SUM(qty*s.price) "total_rev",
+		RANK() OVER(PARTITION BY segment_name ORDER BY SUM(qty*s.price) DESC)	
+	FROM balanced_tree.sales AS s
+	LEFT JOIN balanced_tree.product_details AS pd
+	ON s.prod_id = pd.product_id
+	GROUP BY segment_name, product_name
+	ORDER BY segment_name ASC, total_rev DESC
+-- When using window functions like RANK(), we cannot reference them directly in
+-- the WHERE clause because window functions are applied after the filtering performed by the 
+-- WHERE clause. 
+)
+
+SELECT segment_name, product_name "top_selling_prod", total_rev
+-- here we chose total revenue as the metric for top-selling products, depending on the criteria, 
+-- this could also be revenue after discount or quantity
+FROM rank_top_sales_cte
+WHERE rank = 1;
+
 /*4. What is the total quantity, revenue and discount for each category?*/
 /*5. What is the top selling product for each category?*/
 /*6. What is the percentage split of revenue by product for each segment?*/
