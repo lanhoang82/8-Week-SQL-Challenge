@@ -113,7 +113,6 @@ WITH rank_top_sales_cte AS (
 -- the WHERE clause because window functions are applied after the filtering performed by the 
 -- WHERE clause. 
 )
-
 SELECT segment_name, product_name "top_selling_prod", total_rev
 -- here we chose total revenue as the metric for top-selling products, depending on the criteria, 
 -- this could also be revenue after discount or quantity
@@ -121,9 +120,62 @@ FROM rank_top_sales_cte
 WHERE rank = 1;
 
 /*4. What is the total quantity, revenue and discount for each category?*/
+SELECT category_name, 
+		SUM(qty) "total_qty",
+		SUM(qty*s.price) "total_rev",
+		ROUND(SUM(qty*s.price* (discount::numeric/100 )), 2)  "total_discount"
+FROM balanced_tree.sales AS s
+LEFT JOIN balanced_tree.product_details AS pd
+ON s.prod_id = pd.product_id
+GROUP BY category_name;
+
 /*5. What is the top selling product for each category?*/
+WITH rank_top_sales_cat_cte AS (
+	SELECT category_name, product_name,
+		SUM(qty) "total_qty",
+		SUM(qty*s.price) "total_rev",
+		RANK() OVER(PARTITION BY category_name ORDER BY SUM(qty*s.price) DESC)	
+	FROM balanced_tree.sales AS s
+	LEFT JOIN balanced_tree.product_details AS pd
+	ON s.prod_id = pd.product_id
+	GROUP BY category_name, product_name
+	ORDER BY category_name ASC, total_rev DESC
+-- When using window functions like RANK(), we cannot reference them directly in
+-- the WHERE clause because window functions are applied after the filtering performed by the 
+-- WHERE clause. 
+)
+SELECT category_name, product_name "top_selling_prod", total_rev
+-- here we chose total revenue as the metric for top-selling products, depending on the criteria, 
+-- this could also be revenue after discount or quantity
+FROM rank_top_sales_cat_cte
+WHERE rank = 1;
+
 /*6. What is the percentage split of revenue by product for each segment?*/
+
+SELECT segment_name, 
+		SUM(qty*s.price) "total_rev",
+		ROUND(100*SUM(qty*s.price) / SUM(SUM(qty*s.price)) OVER(), 2) AS pct_rev
+		--OVER() by itself in the context of a window function, it means that 
+		--we want to consider the entire result set as a single window
+FROM balanced_tree.sales AS s
+LEFT JOIN balanced_tree.product_details AS pd
+ON s.prod_id = pd.product_id
+GROUP BY segment_name
+ORDER BY total_rev DESC;
+
 /*7. What is the percentage split of revenue by segment for each category?*/
+
+SELECT category_name, segment_name, 
+		SUM(qty*s.price) "total_rev",
+		ROUND(100*SUM(qty*s.price) / SUM(SUM(qty*s.price)) OVER(PARTITION BY category_name), 2) AS pct_rev
+		--we use the PARTITION BY clause to specify how the rows should be divided into partitions, 
+		--and then we apply an aggregate function SUM over this partition
+FROM balanced_tree.sales AS s
+LEFT JOIN balanced_tree.product_details AS pd
+ON s.prod_id = pd.product_id
+GROUP BY category_name, segment_name
+ORDER BY category_name ASC, total_rev DESC;
+
 /*8. What is the percentage split of total revenue by category?*/
 /*9. What is the total transaction “penetration” for each product? (hint: penetration = number of 
 transactions where at least 1 quantity of a product was purchased divided by total number of transactions)*/
