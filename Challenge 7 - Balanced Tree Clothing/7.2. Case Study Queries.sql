@@ -177,9 +177,64 @@ GROUP BY category_name, segment_name
 ORDER BY category_name ASC, total_rev DESC;
 
 /*8. What is the percentage split of total revenue by category?*/
+
+SELECT category_name, 
+		SUM(qty*s.price) "total_rev",
+		ROUND(100*SUM(qty*s.price) / SUM(SUM(qty*s.price)) OVER(), 2) AS pct_rev
+		--OVER() by itself in the context of a window function, it means that 
+		--we want to consider the entire result set as a single window
+FROM balanced_tree.sales AS s
+LEFT JOIN balanced_tree.product_details AS pd
+ON s.prod_id = pd.product_id
+GROUP BY category_name
+ORDER BY total_rev DESC;
+
 /*9. What is the total transaction “penetration” for each product? (hint: penetration = number of 
 transactions where at least 1 quantity of a product was purchased divided by total number of transactions)*/
-/*10. What is the most common combination of at least 1 quantity of any 3 products in a 1 single transaction?*/
+
+SELECT DISTINCT prod_id, product_name,
+	ROUND(COUNT(DISTINCT txn_id)::numeric / (SELECT COUNT (DISTINCT txn_id) FROM balanced_tree.sales)::numeric, 3) "penetration_pct"
+FROM balanced_tree.sales AS s
+LEFT JOIN balanced_tree.product_details AS pd
+ON s.prod_id = pd.product_id
+GROUP BY prod_id, product_name
+ORDER BY penetration_pct DESC;
+
+
+/*10. What is the most common combination of at least 1 quantity of any 3 products in a 1 single
+transaction?*/
+
+WITH RECURSIVE TransactionCombinations AS ( 
+	-- This CTE will be used to generate all possible combinations 
+	-- of 3 prod_id values within each transaction.
+  SELECT txn_id, 
+         ARRAY[CAST(prod_id AS TEXT)] AS product_combination, 
+         ARRAY[CAST(prod_id AS TEXT)] AS remaining_products
+  FROM balanced_tree.sales
+  WHERE qty >= 1 -- Ensure quantity is at least 1
+  UNION ALL
+  SELECT tc.txn_id, 
+         ARRAY(
+           SELECT DISTINCT unnest(tc.product_combination || ARRAY[CAST(t.prod_id AS TEXT)])
+         ),
+         array_remove(tc.remaining_products, CAST(t.prod_id AS TEXT))
+  FROM TransactionCombinations tc
+  JOIN balanced_tree.sales t ON tc.txn_id = t.txn_id
+  WHERE t.qty >= 1 
+  AND array_length(tc.product_combination, 1) < 3
+  AND t.prod_id > ALL(tc.remaining_products)
+)
+
+SELECT product_combination, COUNT(*) AS combination_count
+FROM TransactionCombinations
+WHERE array_length(product_combination, 1) = 3
+GROUP BY product_combination
+ORDER BY combination_count DESC
+LIMIT 1;
+
+SELECT product_name
+FROM balanced_tree.product_details
+WHERE product_id IN ('2a2353', '9ec847', '9e')
 
 -- D. Reporting Challenge
 /*Write a single SQL script that combines all of the previous questions into a scheduled report that 
