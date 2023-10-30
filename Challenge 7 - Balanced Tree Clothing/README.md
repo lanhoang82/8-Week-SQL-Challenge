@@ -275,16 +275,35 @@ ORDER BY category_name ASC, total_rev DESC;
 8. What is the percentage split of total revenue by category?
 
 ```
+SELECT category_name, 
+		SUM(qty*s.price) "total_rev",
+		ROUND(100*SUM(qty*s.price) / SUM(SUM(qty*s.price)) OVER(), 2) AS pct_rev
+		--OVER() by itself in the context of a window function, it means that 
+		--we want to consider the entire result set as a single window
+FROM balanced_tree.sales AS s
+LEFT JOIN balanced_tree.product_details AS pd
+ON s.prod_id = pd.product_id
+GROUP BY category_name
+ORDER BY total_rev DESC;
 
 ```
 ###### Answer:
+![7 c 8](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/1cefd482-b7cc-47ec-b7f8-894677790a42)
 
 9. What is the total transaction “penetration” for each product? (hint: penetration = number of transactions where at least 1 quantity of a product was purchased divided by total number of transactions)
 
 ```
+SELECT DISTINCT prod_id, product_name,
+	ROUND(COUNT(DISTINCT txn_id)::numeric / (SELECT COUNT (DISTINCT txn_id) FROM balanced_tree.sales)::numeric, 3) "penetration_pct"
+FROM balanced_tree.sales AS s
+LEFT JOIN balanced_tree.product_details AS pd
+ON s.prod_id = pd.product_id
+GROUP BY prod_id, product_name
+ORDER BY penetration_pct DESC;
 
 ```
 ###### Answer:
+![7 c 9](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/518966a3-c3d4-4fce-a360-bee7f1401346)
 
 10. What is the most common combination of at least 1 quantity of any 3 products in a 1 single transaction?
 
