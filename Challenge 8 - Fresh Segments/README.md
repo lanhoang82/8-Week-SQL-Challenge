@@ -21,8 +21,7 @@ Danny has asked for our assistance to analyse aggregated metrics for an example 
 
 For this case study there is a total of 2 datasets which we will need to use to solve the questions.
 
-![Fresh Segments Entity Relationship Diagram](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/0a7d4235-e11f-484b-a808-881a2526f1e1)
-
+![Fresh Segments Entity Relationship Diagram](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/8aaf24d8-aee7-4bd1-b0cf-e579da2170c4)
 
 #### Interest Metrics
 This table contains information about aggregated interest metrics for a specific major client of Fresh Segments which makes up a large proportion of their customer base.
