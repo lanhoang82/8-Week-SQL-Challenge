@@ -3,15 +3,57 @@
 /* 1. Update the fresh_segments.interest_metrics table by modifying the month_year column to be a date 
 data type with the start of the month */
 
+ALTER TABLE fresh_segments.interest_metrics
+ALTER COLUMN month_year TYPE DATE USING to_date(month_year, 'MM-YYYY');
+
+SELECT * 
+FROM fresh_segments.interest_metrics
+LIMIT 5;
+
 /* 2. What is count of records in the fresh_segments.interest_metrics for each month_year value sorted 
 in chronological order (earliest to latest) with the null values appearing first? */
+
+SELECT month_year, COUNT(*)
+FROM fresh_segments.interest_metrics
+GROUP BY month_year
+ORDER BY month_year ASC NULLS FIRST;
 
 /* 3. What do you think we should do with these null values in the fresh_segments.interest_metrics */
 
 /* 4. How many interest_id values exist in the fresh_segments.interest_metrics table but not in the 
 fresh_segments.interest_map table? What about the other way around? */
 
+ALTER TABLE fresh_segments.interest_metrics
+ALTER COLUMN interest_id TYPE INT USING interest_id::integer; 
+--need to alter the data type of interest_id to match data type of id in the interest_map table
+
+SELECT COUNT(DISTINCT interest_id)
+FROM fresh_segments.interest_metrics
+LEFT JOIN fresh_segments.interest_map
+ON fresh_segments.interest_metrics.interest_id = fresh_segments.interest_map.id
+WHERE fresh_segments.interest_map.id IS NULL;
+
+SELECT COUNT(DISTINCT fresh_segments.interest_map.id)
+FROM fresh_segments.interest_metrics
+RIGHT JOIN fresh_segments.interest_map
+ON fresh_segments.interest_metrics.interest_id = fresh_segments.interest_map.id
+WHERE fresh_segments.interest_metrics.interest_id IS NULL;
+
+-- sanity check
+SELECT COUNT(DISTINCT interest_id) "interest_id_count"
+FROM fresh_segments.interest_metrics;
+
+SELECT COUNT(DISTINCT id) "id_count"
+FROM fresh_segments.fresh_segments.interest_map;
+ 
 /* 5. Summarise the id values in the fresh_segments.interest_map by its total record count in this table */
+SELECT COUNT(fresh_segments.interest_map.id)
+FROM fresh_segments.interest_map;
+
+SELECT id, COUNT(*) AS record_count
+FROM fresh_segments.interest_map
+GROUP BY id
+ORDER BY record_count DESC;
 
 /* 6. What sort of table join should we perform for our analysis and why? Check your logic by checking 
 the rows where interest_id = 21246 in your joined output and include all columns from 
