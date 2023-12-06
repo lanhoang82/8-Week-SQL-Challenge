@@ -59,8 +59,27 @@ ORDER BY record_count DESC;
 the rows where interest_id = 21246 in your joined output and include all columns from 
 fresh_segments.interest_metrics and all columns from fresh_segments.interest_map except from the id column. */
 
+--If our goal is to analyze the records in the interest_metrics table, to ensure that we include all 
+--the necessary records in the interest_metrics table, we should use LEFT INNER JOIN to join the tables, 
+-- as the interest_map table is just a reference table to pull in additional reference information for 
+-- the records in the interest_metrics table.
+
+SELECT _month, _year, month_year, integer_id, composition, index_value, ranking, percentile_ranking,
+		interest_name, interest_summary, created_at, last_modified 
+		--postgreSQL dialect doesn't have the SELECT * EXCEPT ability, so it's best to list all relevant columns 
+FROM fresh_segments.interest_metrics
+LEFT JOIN fresh_segments.interest_map
+ON fresh_segments.interest_metrics.interest_id = fresh_segments.interest_map.id
+WHERE interest_id = 21246;
+
 /* 7. Are there any records in your joined table where the month_year value is before the created_at 
 value from the fresh_segments.interest_map table? Do you think these values are valid and why? */
+
+SELECT _month, _year, month_year, created_at
+		--postgreSQL dialect doesn't have the SELECT * EXCEPT ability, so it's best to list all relevant columns 
+FROM fresh_segments.interest_metrics
+LEFT JOIN fresh_segments.interest_map
+ON fresh_segments.interest_metrics.interest_id = fresh_segments.interest_map.id
 
 -- B. Interest Analysis
 
