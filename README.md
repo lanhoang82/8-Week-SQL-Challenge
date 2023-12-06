@@ -1,6 +1,9 @@
 # 8-Week SQL Challenge
 
-This is my commitment to maintaining and improving my SQL skills with the help of Danny Ma's 8-week SQL challenge. There are 8 challenges that are designed to be tackled each week per below. All queries included have been successful run and validated.
+A collection of 8 separate SQL projects covering diverse business scenarios and data types, from financial transactional data to digital marketing data. Data and questions provided by Danny Ma's 8-week SQL challenge. 
+Solutions are my own written in PostgreSQL dialect.
+
+Activities include creating databases on PostgreSQL 14 server, loading data sets, transforming and cleaning data. Write more advanced queries using common types of joins, aggregations, subqueries, common table expressions (CTEs), window functions to obtain insights for relevant business problems in each case study.
 
 - Case Study #1 - Danny’s Diner
 - Case Study #2 - Pizza Runner
@@ -11,4 +14,4 @@ This is my commitment to maintaining and improving my SQL skills with the help o
 - Case Study #7 - Balanced Tree Clothing Co.
 - Case Study #8 - Fresh Segments
 
-More information can be found in the following link: https://8weeksqlchallenge.com/
+More information can be found at the following link: https://8weeksqlchallenge.com/
