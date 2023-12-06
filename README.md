@@ -1,7 +1,7 @@
 # 8-Week SQL Challenge
 
 A collection of 8 separate SQL projects covering diverse business scenarios and data types, from financial transactional data to digital marketing data. Data and questions provided by Danny Ma's 8-week SQL challenge. 
-Solutions are my own written in PostgreSQL dialect.
+**Solutions are my own written in PostgreSQL dialect.**
 
 Activities include creating databases on PostgreSQL 14 server, loading data sets, transforming and cleaning data. Write more advanced queries using common types of joins, aggregations, subqueries, common table expressions (CTEs), window functions to obtain insights for relevant business problems in each case study.
 
