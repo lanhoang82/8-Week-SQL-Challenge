@@ -87,6 +87,11 @@ LEFT JOIN new_interest_map_cte
 ON fresh_segments.interest_metrics.interest_id = new_interest_map_cte.id
 WHERE month_year < created_at_date;
 
+-- There are 188 records in my joined table where the month_year value is before the created_at 
+-- value from the fresh_segments.interest_map table. I don't think these values are valid, at least
+-- in the sense the metric for a measure was created before the interest was defined. But if the client
+-- wants backtrack and retrospective measure the interest, that would also be possible but this should be 
+-- done with caution.
 
 -- B. Interest Analysis
 
