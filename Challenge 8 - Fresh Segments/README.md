@@ -126,9 +126,23 @@ WHERE interest_id = 21246;
 7. Are there any records in your joined table where the month_year value is before the created_at value from the fresh_segments.interest_map table? Do you think these values are valid and why?
 
 ```
-
+WITH new_interest_map_cte AS (
+SELECT id, interest_name, interest_summary,
+	DATE(created_at) "created_at_date",
+	created_at::time "created_at_time"
+FROM fresh_segments.interest_map
+)
+SELECT _month, _year, month_year, created_at_date
+		--postgreSQL dialect doesn't have the SELECT * EXCEPT ability, so it's best to list all relevant columns 
+FROM fresh_segments.interest_metrics
+LEFT JOIN new_interest_map_cte
+ON fresh_segments.interest_metrics.interest_id = new_interest_map_cte.id
+WHERE month_year < created_at_date;
 ```
 ###### Answer:
+![8 7](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/381fc34e-6f12-413e-9524-d6f7dd6b47eb)
+
+There are 188 records in my joined table where the month_year value is before the created_at value from the fresh_segments.interest_map table. I don't think these values are valid, at least in the sense the metric for a measure was created before the interest was defined. But if the client wants backtrack and retrospective measure the interest, that would also be possible but this should be done with caution.
 
 ### B. Interest Analysis
 
