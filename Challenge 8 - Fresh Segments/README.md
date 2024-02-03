@@ -224,8 +224,43 @@ LIMIT 5;
 4. For the 5 interests found in the previous question - what were the minimum and maximum percentile_ranking values for each interest and its corresponding year_month value? Can you describe what is happening for these 5 interests?
 
 ```
+WITH max_std_pct_cte AS (
+	SELECT interest_id, interest_name, ROUND(stddev_pop(percentile_ranking)::numeric, 2)  "std_pct_rank"
+	FROM fresh_segments.interest_metrics im
+	LEFT JOIN fresh_segments.interest_map ima
+	ON im.interest_id = ima.id
+	WHERE interest_id IS NOT NULL
+	GROUP BY interest_id, interest_name
+	ORDER BY std_pct_rank DESC
+	LIMIT 5
+),
+ranked_pct_cte AS (
+	SELECT im.interest_id, month_year, percentile_ranking,
+		ROW_NUMBER() OVER (PARTITION BY im.interest_id ORDER BY percentile_ranking DESC) "pct_order"
+	FROM fresh_segments.interest_metrics im
+	RIGHT JOIN max_std_pct_cte mspc
+	ON im.interest_id = mspc.interest_id
+	ORDER BY interest_id ASC
+),
+min_max_pct_cte AS (
+	SELECT interest_id, month_year, percentile_ranking,
+	CASE
+	WHEN pct_order = 1 THEN 'Max Percentile Rank'
+	WHEN pct_order = MAX(pct_order) OVER (PARTITION BY interest_id) THEN 'Min Percentile Rank'
+	ELSE NULL
+	END min_max_pct
+FROM ranked_pct_cte
+)
+SELECT mmpc.interest_id, interest_name, mmpc.month_year, mmpc.percentile_ranking, min_max_pct
+FROM min_max_pct_cte mmpc
+LEFT JOIN fresh_segments.interest_map ima
+ON mmpc.interest_id = ima.id
+WHERE min_max_pct = 'Max Percentile Rank' OR
+		min_max_pct = 'Min Percentile Rank';
 ```
 ###### Answer:
+![8c 4](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/da9e08ef-8a69-41a2-864d-d6c1e0f25228)
+What we are seeing with these interests is the order of their index_value records decreases over various periods between 2018 and 2019. Particularly, the average percentage of the client's customer list interacted with the interest got lower over time for all Fresh Segments clients' customers. In short, people seem to get less interested in these topics and interact less with them over time.
 
 5. How would you describe our customers in this segment based on their composition and ranking values? What sort of products or services should we show to these customers and what should we avoid?
 
