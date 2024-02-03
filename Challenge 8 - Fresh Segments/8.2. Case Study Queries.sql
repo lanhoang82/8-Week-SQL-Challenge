@@ -96,26 +96,113 @@ WHERE month_year < created_at_date;
 -- B. Interest Analysis
 
 /* 1. Which interests have been present in all month_year dates in our dataset? */
+SELECT interest_id, COUNT(DISTINCT month_year) "month_year_count"
+FROM fresh_segments.interest_metrics
+GROUP BY interest_id
+HAVING COUNT(DISTINCT month_year) = 
+	(SELECT COUNT(DISTINCT month_year) FROM fresh_segments.interest_metrics);
+	-- HAVING instead of WHERE since we are applying condition to a group (month_year COUNT) as a whole
+	-- whereas WHERE is to filter out individual rows. 
+
 
 /* 2. Using this same total_months measure - calculate the cumulative percentage of all records starting
 at 14 months - which total_months value passes the 90% cumulative percentage value? */
+WITH total_month_cte AS (
+	SELECT interest_id, COUNT(DISTINCT month_year) "month_year_count"
+	FROM fresh_segments.interest_metrics
+	GROUP BY interest_id
+	HAVING COUNT(DISTINCT month_year) = 
+		(SELECT COUNT(DISTINCT month_year) FROM fresh_segments.interest_metrics)
+)
+SELECT fresh_segments.interest_metrics.interest_id, month_year
+FROM fresh_segments.interest_metrics
+INNER JOIN total_month_cte 
+ON fresh_segments.interest_metrics.interest_id = total_month_cte.interest_id
+
+-- to be visited, I'm not sure I understood the question atm
 
 /* 3. If we were to remove all interest_id values which are lower than the total_months value we found 
 in the previous question - how many total data points would we be removing? */
+
+WITH total_month_cte AS (
+	SELECT interest_id, COUNT(DISTINCT month_year) "month_year_count"
+	FROM fresh_segments.interest_metrics
+	GROUP BY interest_id
+)
+SELECT fresh_segments.interest_metrics.interest_id, month_year
+FROM fresh_segments.interest_metrics
+INNER JOIN total_month_cte 
+ON fresh_segments.interest_metrics.interest_id = total_month_cte.interest_id
+WHERE month_year_count < 14;
+
+-- we would be removing 6360 records
 
 /* 4. Does this decision make sense to remove these data points from a business perspective? Use an 
 example where there are all 14 months present to a removed interest example for your arguments - think 
 about what it means to have less months present from a segment perspective. */
 
 /* 5. After removing these interests - how many unique interests are there for each month? */
+WITH total_month_cte AS (	
+	SELECT interest_id, COUNT(DISTINCT month_year) "month_year_count"
+	FROM fresh_segments.interest_metrics
+	GROUP BY interest_id
+	HAVING COUNT(DISTINCT month_year) = 
+		(SELECT COUNT(DISTINCT month_year) FROM fresh_segments.interest_metrics)
+)
+SELECT COUNT(interest_id)
+FROM total_month_cte;
 
+-- there are 480 unique interests are there for each month
+	
 -- C.Segment Analysis
 
 /* 1. Using our filtered dataset by removing the interests with less than 6 months worth of data, which 
 are the top 10 and bottom 10 interests which have the largest composition values in any month_year? 
 Only use the maximum composition value for each interest but you must keep the corresponding month_year */
 
+WITH interest_greater_6_cte AS (
+	SELECT interest_id, COUNT(DISTINCT month_year) "month_year_count"
+	FROM fresh_segments.interest_metrics
+	GROUP BY interest_id
+	HAVING COUNT(DISTINCT month_year) >= 6
+	
+),
+max_comp_per_interest AS(
+    SELECT interest_id,
+        MAX(composition) AS max_composition
+    FROM fresh_segments.interest_metrics
+    WHERE interest_id IN (SELECT interest_id FROM interest_greater_6_cte)
+    GROUP BY interest_id
+),
+ranked_interest AS (
+	SELECT mcpr.interest_id, max_composition, month_year,
+		ROW_NUMBER() OVER (ORDER BY max_composition DESC) AS top_comp,
+		ROW_NUMBER() OVER (ORDER BY max_composition ASC) AS bottom_comp
+	    FROM max_comp_per_interest mcpr
+		LEFT JOIN fresh_segments.interest_metrics im
+		ON im.interest_id = mcpr.interest_id 
+		AND im.composition = mcpr.max_composition
+)
+SELECT interest_id, interest_name, max_composition, month_year, 
+	CASE 
+	WHEN top_comp <= 10 THEN 'top 10' 
+	WHEN bottom_comp <= 10 THEN 'bottom 10' 
+	END top_or_bottom
+FROM ranked_interest
+LEFT JOIN fresh_segments.interest_map
+ON ranked_interest.interest_id = fresh_segments.interest_map.id
+WHERE top_comp <= 10 OR bottom_comp <= 10
+ORDER BY max_composition DESC;
+
 /* 2. Which 5 interests had the lowest average ranking value? */
+
+SELECT interest_id, interest_name, ROUND(AVG(ranking), 2)  "avg_rank"
+FROM fresh_segments.interest_metrics im
+LEFT JOIN fresh_segments.interest_map ima
+ON im.interest_id = ima.id
+GROUP BY interest_id, interest_name
+ORDER BY avg_rank ASC
+LIMIT 5;
 
 /* 3. Which 5 interests had the largest standard deviation in their percentile_ranking value? */
 
