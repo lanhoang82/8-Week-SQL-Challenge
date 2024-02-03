@@ -208,8 +208,18 @@ LIMIT 5;
 3. Which 5 interests had the largest standard deviation in their percentile_ranking value? 
 
 ```
+SELECT interest_id, interest_name, ROUND(stddev_pop(percentile_ranking)::numeric, 2)  "std_pct_rank"
+FROM fresh_segments.interest_metrics im
+LEFT JOIN fresh_segments.interest_map ima
+ON im.interest_id = ima.id
+WHERE interest_id IS NOT NULL
+GROUP BY interest_id, interest_name
+ORDER BY std_pct_rank DESC
+LIMIT 5;
 ```
 ###### Answer:
+![8c 3](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/186b83ba-0255-4c33-aa31-94204628c009)
+
 
 4. For the 5 interests found in the previous question - what were the minimum and maximum percentile_ranking values for each interest and its corresponding year_month value? Can you describe what is happening for these 5 interests?
 
