@@ -205,9 +205,24 @@ LIMIT 5;
 ![8c 2](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/1b109fb4-e115-4eb3-a02c-332c0dd7c68d)
 
 
-3. 
+3. Which 5 interests had the largest standard deviation in their percentile_ranking value? 
+
 ```
 ```
 ###### Answer:
+
+4. For the 5 interests found in the previous question - what were the minimum and maximum percentile_ranking values for each interest and its corresponding year_month value? Can you describe what is happening for these 5 interests?
+
+```
+```
+###### Answer:
+
+5. How would you describe our customers in this segment based on their composition and ranking values? What sort of products or services should we show to these customers and what should we avoid?
+
+```
+```
+###### Answer:
+
+
 ### C. Index Analysis
 
