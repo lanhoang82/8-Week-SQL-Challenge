@@ -260,6 +260,7 @@ WHERE min_max_pct = 'Max Percentile Rank' OR
 ```
 ###### Answer:
 ![8c 4](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/da9e08ef-8a69-41a2-864d-d6c1e0f25228)
+
 What we are seeing with these interests is the order of their index_value records decreases over various periods between 2018 and 2019. Particularly, the average percentage of the client's customer list interacted with the interest got lower over time for all Fresh Segments clients' customers. In short, people seem to get less interested in these topics and interact less with them over time.
 
 5. How would you describe our customers in this segment based on their composition and ranking values? What sort of products or services should we show to these customers and what should we avoid?
