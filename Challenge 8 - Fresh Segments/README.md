@@ -144,9 +144,70 @@ WHERE month_year < created_at_date;
 
 There are 188 records in my joined table where the month_year value is before the created_at value from the fresh_segments.interest_map table. I don't think these values are valid, at least in the sense the metric for a measure was created before the interest was defined. But if the client wants backtrack and retrospective measure the interest, that would also be possible but this should be done with caution.
 
-### B. Interest Analysis
 
-### C. Segment Analysis
+### B. Segment Analysis
 
-### D. Index Analysis
+1. Using our filtered dataset by removing the interests with less than 6 months worth of data, which are the top 10 and bottom 10 interests which have the largest composition values in any month_year? Only use the maximum composition value for each interest but you must keep the corresponding month_year
+
+```
+WITH interest_greater_6_cte AS (
+	SELECT interest_id, COUNT(DISTINCT month_year) "month_year_count"
+	FROM fresh_segments.interest_metrics
+	GROUP BY interest_id
+	HAVING COUNT(DISTINCT month_year) >= 6
+	
+),
+max_comp_per_interest AS(
+    SELECT interest_id,
+        MAX(composition) AS max_composition
+    FROM fresh_segments.interest_metrics
+    WHERE interest_id IN (SELECT interest_id FROM interest_greater_6_cte)
+    GROUP BY interest_id
+),
+ranked_interest AS (
+	SELECT mcpr.interest_id, max_composition, month_year,
+		ROW_NUMBER() OVER (ORDER BY max_composition DESC) AS top_comp,
+		ROW_NUMBER() OVER (ORDER BY max_composition ASC) AS bottom_comp
+	    FROM max_comp_per_interest mcpr
+		LEFT JOIN fresh_segments.interest_metrics im
+		ON im.interest_id = mcpr.interest_id 
+		AND im.composition = mcpr.max_composition
+)
+SELECT interest_id, interest_name, max_composition, month_year, 
+	CASE 
+	WHEN top_comp <= 10 THEN 'top 10' 
+	WHEN bottom_comp <= 10 THEN 'bottom 10' 
+	END top_or_bottom
+FROM ranked_interest
+LEFT JOIN fresh_segments.interest_map
+ON ranked_interest.interest_id = fresh_segments.interest_map.id
+WHERE top_comp <= 10 OR bottom_comp <= 10
+ORDER BY max_composition DESC;
+```
+
+###### Answer:
+![8c 1](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/36d6ea97-7b67-4df8-84eb-19055f75122b)
+
+
+2. Which 5 interests had the lowest average ranking value?
+
+```
+SELECT interest_id, interest_name, ROUND(AVG(ranking), 2)  "avg_rank"
+FROM fresh_segments.interest_metrics im
+LEFT JOIN fresh_segments.interest_map ima
+ON im.interest_id = ima.id
+GROUP BY interest_id, interest_name
+ORDER BY avg_rank ASC
+LIMIT 5;
+```
+
+###### Answer:
+![8c 2](https://github.com/lanhoang82/8-Week-SQL-Challenge/assets/47191803/1b109fb4-e115-4eb3-a02c-332c0dd7c68d)
+
+
+3. 
+```
+```
+###### Answer:
+### C. Index Analysis
 
